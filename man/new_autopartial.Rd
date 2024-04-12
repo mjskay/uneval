@@ -49,3 +49,7 @@ the higher-level interfaces \code{\link[=autopartial]{autopartial()}} or \code{\
 # TODO
 
 }
+\seealso{
+\code{\link[=autopartial]{autopartial()}} and \code{\link[=partial]{partial()}} for higher-level interfaces to
+constructing partial functions.
+}

@@ -21,15 +21,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// find_promise_
-SEXP find_promise_(Symbol name, Environment env);
-RcppExport SEXP _uneval_find_promise_(SEXP nameSEXP, SEXP envSEXP) {
+// find_promise
+SEXP find_promise(Symbol name, Environment env);
+RcppExport SEXP _uneval_find_promise(SEXP nameSEXP, SEXP envSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Symbol >::type name(nameSEXP);
     Rcpp::traits::input_parameter< Environment >::type env(envSEXP);
-    rcpp_result_gen = Rcpp::wrap(find_promise_(name, env));
+    rcpp_result_gen = Rcpp::wrap(find_promise(name, env));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -94,7 +94,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_uneval_unwrap_promise_", (DL_FUNC) &_uneval_unwrap_promise_, 1},
-    {"_uneval_find_promise_", (DL_FUNC) &_uneval_find_promise_, 2},
+    {"_uneval_find_promise", (DL_FUNC) &_uneval_find_promise, 2},
     {"_uneval_promise_expr_", (DL_FUNC) &_uneval_promise_expr_, 1},
     {"_uneval_promise_env_", (DL_FUNC) &_uneval_promise_env_, 1},
     {"_uneval_is_waiver_", (DL_FUNC) &_uneval_is_waiver_, 1},

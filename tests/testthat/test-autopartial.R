@@ -101,6 +101,16 @@ test_that("autopartial works on primitive functions", {
   expect_equal(l(base = 2)(2), 1)
 })
 
+
+# partial -----------------------------------------------------------------
+
+test_that("positional args work with partial()", {
+  f = function(x, y, z = 3) c(x, y, z)
+  fp = partial(f, 1, z = 4)
+  expect_equal(fp(2), c(1, 2, 4))
+})
+
+
 # match.call() in autopartial() ------------------------------------------
 
 test_that("match.call supports multiple partial applications", {
@@ -145,14 +155,14 @@ test_that("is_waiver works", {
   expect_true(is_waiver(x))
   expect_true(is_waiver(waiver()))
 
-  expect_true(is_waiver(new_promise(quote(x))[[1]]))
-  expect_true(is_waiver(new_promise(quote(waiver()))[[1]]))
+  expect_true(is_waiver(new_promise(quote(x))))
+  expect_true(is_waiver(new_promise(quote(waiver()))))
 
-  f = function(x) promise_list(x)
+  f = function(x) capture(x)
   g = function(y) f(y)
   h = compiler::cmpfun(function(z) g(z))
-  expect_true(is_waiver(h(x)[[1]]))
-  expect_true(is_waiver(h(waiver())[[1]]))
+  expect_true(is_waiver(h(x)))
+  expect_true(is_waiver(h(waiver())))
 })
 
 test_that("waivers work on arguments with default values", {
@@ -183,14 +193,14 @@ test_that("waivers work on positional arguments", {
 test_that("waivers work on initial application", {
   f = function(x = 5) x
   expect_equal(autopartial(f, waiver())(), 5)
-  expect_equal(partial_(f, waiver())(), 5)
+  expect_equal(partial(f, waiver())(), 5)
 })
 
 # promises ----------------------------------------------------------------
 
 test_that("promise expressions are not retrieved as byte code", {
   f = function(...) {
-    lapply(promise_list(...), promise_expr_)
+    lapply(promises(...), promise_expr_)
   }
   f = autopartial(f)
   g = compiler::cmpfun(function(...) {

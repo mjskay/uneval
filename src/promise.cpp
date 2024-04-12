@@ -27,7 +27,7 @@ SEXP unwrap_promise_(SEXP x) {
  * (if `name` does not refer to a promise).
  */
 // [[Rcpp::export]]
-SEXP find_promise_(Symbol name, Environment env) {
+SEXP find_promise(Symbol name, Environment env) {
   RObject var = Rf_findVar(name, env);
   return unwrap_promise_(var);
 }

@@ -2,7 +2,6 @@
 % Please edit documentation in R/autopartial.R
 \name{autopartial}
 \alias{autopartial}
-\alias{automatic-partial-functions}
 \title{Automatic partial function application}
 \usage{
 autopartial(.f, ...)
@@ -18,16 +17,19 @@ A modified version of \code{.f} that will automatically be partially
 applied until all of its required arguments have been given.
 }
 \description{
-Convert a function into one that supports \emph{automatic partial application}.
-When called, if all of its required arguments have not been provided, an
-\emph{automatically partially-applied} function returns a modified version of
-itself that uses the arguments passed to it so far as defaults. Once all
-required arguments have been supplied, the function is evaluated.
+Construct an \link{autopartial} function; that is, a function that supports
+\emph{automatic partial application}.
 
-\code{autopartial()} can be considered a form of
+When a function created by \code{\link[=autopartial]{autopartial()}} is called,
+if all of its required arguments have not been provided, it returns a
+modified version of itself that uses the arguments passed to it so far as
+defaults. Once all required arguments have been supplied, the function is
+evaluated.
+
+\code{\link[=autopartial]{autopartial()}} can be considered a form of
 \href{https://en.wikipedia.org/wiki/Currying}{currying} with respect to
 a function's required arguments, but I think \emph{automatic partial application}
-gets the idea across more clearly. \code{autopartial()} also has a number of
+gets the idea across more clearly. \code{\link[=autopartial]{autopartial()}} also has a number of
 features, like named arguments and defaults, which are not typically
 considered part of the classical definition of currying. See \strong{Details}.
 }
@@ -117,4 +119,10 @@ g(1)
 f(z = waiver())(1, 2)  # uses default z = 3
 f(z = 4)(z = waiver())(1, 2)  # uses z = 4
 
+}
+\seealso{
+\code{\link[=new_autopartial]{new_autopartial()}} for lower-level control when constructing
+(automatic or non-automatic) partial functions.
+
+\code{\link[=partial]{partial()}} to partially apply a function once.
 }

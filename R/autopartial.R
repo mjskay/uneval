@@ -1,16 +1,19 @@
 #' Automatic partial function application
 #'
 #' @description
-#' Convert a function into one that supports *automatic partial application*.
-#' When called, if all of its required arguments have not been provided, an
-#' *automatically partially-applied* function returns a modified version of
-#' itself that uses the arguments passed to it so far as defaults. Once all
-#' required arguments have been supplied, the function is evaluated.
+#' Construct an [autopartial] function; that is, a function that supports
+#' *automatic partial application*.
 #'
-#' `autopartial()` can be considered a form of
+#' When a function created by [autopartial()] is called,
+#' if all of its required arguments have not been provided, it returns a
+#' modified version of itself that uses the arguments passed to it so far as
+#' defaults. Once all required arguments have been supplied, the function is
+#' evaluated.
+#'
+#' [autopartial()] can be considered a form of
 #' [currying](https://en.wikipedia.org/wiki/Currying) with respect to
 #' a function's required arguments, but I think *automatic partial application*
-#' gets the idea across more clearly. `autopartial()` also has a number of
+#' gets the idea across more clearly. [autopartial()] also has a number of
 #' features, like named arguments and defaults, which are not typically
 #' considered part of the classical definition of currying. See **Details**.
 #'
@@ -94,6 +97,10 @@
 #' A modified version of `.f` that will automatically be partially
 #' applied until all of its required arguments have been given.
 #'
+#' @seealso [new_autopartial()] for lower-level control when constructing
+#' (automatic or non-automatic) partial functions.
+#' @seealso [partial()] to partially apply a function once.
+#'
 #' @examples
 #' # create a custom automatically partially-applied function
 #' f = autopartial(function(x, y, z = 3) (x + y) * z)
@@ -108,7 +115,6 @@
 #' f(z = 4)(z = waiver())(1, 2)  # uses z = 4
 #'
 #' @name autopartial
-#' @aliases automatic-partial-functions
 NULL
 
 
@@ -155,92 +161,19 @@ waiver = function() {
 is_waiver = is_waiver_
 
 
-# promise lists -----------------------------------------------------------------
+# promises ----------------------------------------------------------------
 
-new_promise_list = function(x = list()) {
-  class(x) = "uneval_promise_list"
-  x
-}
-
-#' construct a list of promises
-#' @param ... unevaluated expressions, possibly with names
-#' @returns a list of promises
-#' @noRd
-promise_list = function(...) {
+promises = function(...) {
   capture_dots()
 }
 
-#' @export
-`[.uneval_promise_list` = function(x, ...) {
-  new_promise_list(NextMethod())
-}
-
-#' @export
-print.uneval_promise_list = function(x, ...) {
-  cat0("<promise_list>:\n")
-  print(lapply(x, make_printable))
-  invisible(x)
-}
-
-#' @export
-format.uneval_promise_list = function(x, ...) {
-  format(lapply(x, make_printable), ...)
-}
-
-#' @export
-print.uneval_formatted_promise = function(x, ...) {
-  cat0(x, "\n")
-  invisible(x)
-}
-
-make_printable = function(x) {
-  if (typeof(x) == "promise") {
-    expr = promise_expr(x)
-    env = promise_env(x)
-    structure(
-      paste0("<promise: ", deparse0(expr), ", ", format(env), ">"),
-      class = c("uneval_formatted_promise", "character")
-    )
-  } else {
-    x
-  }
-}
-
-is_promise_list = function(x) {
-  inherits(x, "uneval_promise_list")
-}
-
-# promises ----------------------------------------------------------------
-
-# NOTE: individual promises are always stored in promise lists because
-# they are fragile and prone to evaluating themselves if assigned to variables.
 new_promise = function(expr, env = parent.frame()) {
-  do.call(promise_list, list(expr), envir = env)
+  do.call(promises, list(expr), envir = env)[[1]]
 }
 
 promise = function(x, env = parent.frame()) {
   new_promise(substitute(x), env)
 }
-
-arg_promise = function(x, env = parent.frame()) {
-  expr = substitute(x)
-  stopifnot(is.symbol(expr))
-  # seem to need to do wrap the call to find_promise() in a list rather than
-  # returning directly to avoid evaluating the promise...
-  new_promise_list(list(find_promise(expr, env)))
-}
-
-#' Find a promise by name.
-#' @param name the name of a promise as a string or symbol
-#' @param env the environment to search
-#' @returns One of:
-#' - If `name` refers to a promise, the promise with the given name from the
-#' given environment. Promises whose code is itself a promise (possibly
-#' recursively) are unwrapped so that the code referred to by the returned
-#' promise is not also a promise.
-#' - If `name` does not refer to a promise, it is returned as a normal object.
-#' @noRd
-find_promise = find_promise_
 
 promise_expr = function(x) {
   if (typeof(x) == "promise") {
@@ -340,18 +273,44 @@ apply_closure = function(call, fun, args, env) {
 #' @rdname autopartial
 #' @export
 autopartial = function(.f, ...) {
-  args = remove_waivers(match_function_args(.f, promise_list(...)))
+  args = remove_waivers(match_function_args(.f, capture_dots()))
   new_autopartial(.f, args, f_expr = substitute(.f))
 }
 
 #' Partial function application
 #'
-#' Partially apply a function once.
-#' @param .f a function
-#' @param ... arguments to be partially applied to `.f`
-#' @noRd
-partial_ = function(.f, ...) {
-  args = remove_waivers(match_function_args(.f, promise_list(...)))
+#' @description
+#' Partially apply a function.
+#'
+#' @param .f ([closure] or [primitive]) function to be partially applied.
+#' @param ... arguments to be partially applied to `.f`.
+#'
+#' @details
+#' Partially applies the provided arguments to the function `.f`. Acts like
+#' [autopartial()], except that the next invocation will evaluate the function
+#' rather than waiting for all required arguments to be supplied.
+#'
+#' Arguments may also be passed the special value [waiver()]. If [waiver()] is
+#' passed to an argument, its default value is used instead.
+#'
+#' Great pains are taken to ensure that the resulting function acts as much as
+#' possible like the original function. See the **Implementation details**
+#' section of [autopartial()] for more information.
+#'
+#' @returns
+#' A modified version of `.f` with the arguments in `...` applied to it.
+#'
+#' @seealso [autopartial()] for automatic partial function application.
+#'
+#' @examples
+#' f = function(x, y, z = 3) c(x, y, z)
+#' fp = partial(f, 1, z = 4)
+#' fp
+#' fp(2)
+#'
+#' @export
+partial = function(.f, ...) {
+  args = remove_waivers(match_function_args(.f, capture_dots()))
   new_autopartial(.f, args, required_arg_names = character(), f_expr = substitute(.f))
 }
 
@@ -381,6 +340,9 @@ partial_ = function(.f, ...) {
 #'
 #' @returns a [function] that when called will be partially applied until all of
 #' the arguments in `required_arg_names` have been supplied.
+#'
+#' @seealso [autopartial()] and [partial()] for higher-level interfaces to
+#' constructing partial functions.
 #'
 #' @examples
 #' # TODO
@@ -433,10 +395,11 @@ new_autopartial = function(
   # update expressions in formals to match provided args
   updated_formal_names = intersect(names(partial_formals), names(args))
   partial_formals[updated_formal_names] = lapply(args[updated_formal_names], promise_expr)
-  # move any required args that have been applied to the end. this allows
+  # move any positional args that have been applied to the end. this allows
   # f(1)(2)(3)... to be equivalent to f(1, 2, 3, ...) if positions 1, 2, 3, ...
   # correspond to required arguments.
-  is_updated_required = names(partial_formals) %in% intersect(updated_formal_names, required_arg_names)
+  positional_arg_names = find_required_arg_names(f)
+  is_updated_required = names(partial_formals) %in% intersect(updated_formal_names, positional_arg_names)
   partial_formals = c(partial_formals[!is_updated_required], partial_formals[is_updated_required])
   formals(partial_f) = partial_formals
 
@@ -539,79 +502,6 @@ find_required_arg_names = function(f) {
 #' @noRd
 is_missing_arg = function(x) {
   missing(x) || identical(x, quote(expr = ))
-}
-
-#' Capture promises for arguments to a function call
-#'
-#' @description
-#' Capture a list of [promise]s representing arguments to the surrounding
-#' function (or another function specified by `which`).
-#'
-#' @param which (scalar [integer]) the frame number to get call information
-#' from, as returned by a function like [sys.parent()]. The default looks at
-#' the arguments passed to the function that called this one.
-#'
-#' @details
-#' `capture_all()` captures all arguments to the function call.
-#'
-#' @returns A [promise_list] where names are names of arguments to the function
-#' in the given frame and values are the promises corresponding to those
-#' arguments.
-#'
-#' @examples
-#' # captures x, y, z
-#' f = function(x, y, ...) capture_all()
-#' f(1, y = 2, z = 3)
-#'
-#' # captures x, y
-#' f = function(x, y, ...) capture_named()
-#' f(1, y = 2, z = 3)
-#'
-#' # captures z
-#' f = function(x, y, ...) capture_dots()
-#' f(1, y = 2, z = 3)
-#'
-#' @name capture_all
-#' @export
-capture_all = function(which = sys.parent()) {
-  named_args = capture_named(which)
-  dots_args = capture_dots(which)
-  all_args = c(named_args, dots_args)
-  # TODO: this line might be redundant / can maybe just return all_args
-  new_promise_list(match_function_args(sys.function(which), all_args))
-}
-
-#' @details
-#' `capture_named()` captures named arguments (i.e. those explicitly
-#' listed in the function definition).
-#'
-#' @rdname capture_all
-#' @export
-capture_named = function(which = sys.parent()) {
-  env = sys.frame(which)
-  dots_env = do.call(parent.frame, list(), envir = env)
-
-  f = sys.function(which)
-  call = match.call(f, sys.call(which), envir = dots_env)
-  arg_names = intersect(names(call[-1]), names(formals(args(f))))
-  promises = lapply(arg_names, find_promise, env)
-  names(promises) = arg_names
-  new_promise_list(promises)
-}
-
-#' @details
-#' `capture_dots()` captures arguments passed via `...`
-#'
-#' @rdname capture_all
-#' @export
-capture_dots = function(which = sys.parent()) {
-  env = sys.frame(which)
-  dots = env$...
-  if (missing(dots)) {
-    new_promise_list()
-  } else {
-    new_promise_list(dots_to_list_(dots))
-  }
 }
 
 #' Remove waivers from an argument list

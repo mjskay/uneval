@@ -5,8 +5,8 @@ unwrap_promise_ <- function(x) {
     .Call(`_uneval_unwrap_promise_`, x)
 }
 
-find_promise_ <- function(name, env) {
-    .Call(`_uneval_find_promise_`, name, env)
+find_promise <- function(name, env) {
+    .Call(`_uneval_find_promise`, name, env)
 }
 
 promise_expr_ <- function(promise) {
