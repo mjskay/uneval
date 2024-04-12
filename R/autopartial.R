@@ -7,16 +7,20 @@
 #' itself that uses the arguments passed to it so far as defaults. Once all
 #' required arguments have been supplied, the function is evaluated.
 #'
-#' `auto_partial()` can be considered a form of
+#' `autopartial()` can be considered a form of
 #' [currying](https://en.wikipedia.org/wiki/Currying) with respect to
 #' a function's required arguments, but I think *automatic partial application*
-#' gets the idea across more clearly. `auto_partial()` also a number of
+#' gets the idea across more clearly. `autopartial()` also has a number of
 #' features, like named arguments and defaults, which are not typically
 #' considered part of the classical definition of currying. See **Details**.
 #'
+#' @param .f ([closure] or [primitive]) function to turn into an automatically
+#' partially-applied function.
+#' @param ... optional arguments to be partially applied to `.f`.
+#'
 #' @details
 #' Create an *automatically partially-applied* function by passing it to
-#' `auto_partial()`. The function can be called repeatedly until
+#' `autopartial()`. The function can be called repeatedly until
 #' all required arguments (i.e. those that do not have default values
 #' provided in the function definition) have been supplied, then the function is
 #' evaluated and the result returned.
@@ -25,7 +29,7 @@
 #'
 #' ```r
 #' f = function(x, y, z, a = 4) c(x, y, z, a)
-#' f = auto_partial(f)
+#' f = autopartial(f)
 #' ```
 #'
 #' It can be called as normal; e.g. `f(1, 2, 3)`, which yields `c(1, 2, 3, 4)`).
@@ -45,10 +49,10 @@
 #' definition of `f`), and `f(x = 1)(x = waiver())` is equivalent to `f(x = 1)`.
 #'
 #' @section Implementation details:
-#' Great pains are taken to ensure that [auto_partial] functions act as much as
+#' Great pains are taken to ensure that [autopartial] functions act as much as
 #' possible like normal R functions.
 #'
-#' The initial definition of an [auto_partial] function has the same
+#' The initial definition of an [autopartial] function has the same
 #' [formals()] as the function it wraps. When it is further partially applied,
 #' the [formals()] are updated to reflect the expressions of the modified
 #' arguments. To allow for sequences of applications of positional arguments
@@ -69,7 +73,7 @@
 #'
 #' The final function evaluation acts as much as possible like a normal function
 #' evaluation. The underlying function is called from the same environment that
-#' the final [auto_partial] function is called from, so functions that inspect
+#' the final [autopartial] function is called from, so functions that inspect
 #' their context (e.g. using [parent.frame()]) should work correctly. The call
 #' expression associated with the function invocation is also constructed
 #' to reflect all of the partially-applied arguments and the original function
@@ -78,17 +82,32 @@
 #'
 #' For example, the [density()] function, which uses both [substitute()] and
 #' [match.call()] to construct labels for its output, gives identical output
-#' if invoked directly (e.g. `density(rnorm(10))`) or via [auto_partial]
-#' (e.g. `auto_partial(density)(rnorm(10))`).
+#' if invoked directly (e.g. `density(rnorm(10))`) or via [autopartial]
+#' (e.g. `autopartial(density)(rnorm(10))`).
 #'
-#' Under the hood, [auto_partial()] uses [new_auto_partial()] to create the
+#' Under the hood, [autopartial()] uses [new_autopartial()] to create the
 #' *automatically partially-applied* function, captures intermediate arguments
-#' as [promise]s using [arg_promise_list()], and ultimately uses [pcall()]
+#' as [promise]s using [capture_all()], and ultimately uses [invoke()]
 #' to call the underlying function.
-#' @examples
-#' # TODO
 #'
-#' @name auto_partial
+#' @returns
+#' A modified version of `.f` that will automatically be partially
+#' applied until all of its required arguments have been given.
+#'
+#' @examples
+#' # create a custom automatically partially-applied function
+#' f = autopartial(function(x, y, z = 3) (x + y) * z)
+#' f()
+#' f(1)
+#' g = f(y = 2)(z = 4)
+#' g
+#' g(1)
+#'
+#' # pass waiver() to optional arguments to use existing values
+#' f(z = waiver())(1, 2)  # uses default z = 3
+#' f(z = 4)(z = waiver())(1, 2)  # uses z = 4
+#'
+#' @name autopartial
 #' @aliases automatic-partial-functions
 NULL
 
@@ -100,13 +119,13 @@ NULL
 #' A flag indicating that the default value of an argument should be used.
 #'
 #' @details
-#' A [waiver()] is a flag passed to an argument of an [auto_partial] function
+#' A [waiver()] is a flag passed to an argument of an [autopartial] function
 #' that indicates the arguments should keep its default value (or the most
 #' recently partially-applied value of that argument).
 #'
-#' @seealso [auto_partial()]
+#' @seealso [autopartial()]
 #' @examples
-#' f = auto_partial(function(x, y = "b") {
+#' f = autopartial(function(x, y = "b") {
 #'   c(x = x, y = y)
 #' })
 #'
@@ -148,7 +167,7 @@ new_promise_list = function(x = list()) {
 #' @returns a list of promises
 #' @noRd
 promise_list = function(...) {
-  dot_arg_promise_list()
+  capture_dots()
 }
 
 #' @export
@@ -242,8 +261,9 @@ promise_env = function(x) {
 
 # closures ----------------------------------------------------------------
 
-#' Call a function using promises
+#' Invoke a function using promises
 #'
+#' @description
 #' Calls a function using an argument list that may contain promises.
 #'
 #' @param f ([closure] or [primitive]) function to call
@@ -251,21 +271,34 @@ promise_env = function(x) {
 #' to call the function with.
 #' @param env ([environment]) environment to call `f` from. This will be
 #' available as [parent.frame()] within `f`.
-#' @param name ([language] or scalar [character]) name of the function to
+#' @param f_expr ([language]) unevaluated expression for the function to
 #' use when constructing the unevaluated call. This is purely cosmetic; it
 #' does not affect what function is called, but will be available as
 #' the first element of [sys.call()] within `f`.
 #'
+#' @details
 #' This function is intended as an alternative to [do.call()] that provides
 #' better support for promises when calling [closure]s. In particular,
 #' promises in `args` will be left as-is, allowing precise manipulation of the
 #' expressions and environments of the arguments to `f`.
 #'
-#' The name of the function in the unevaluated call provided to `f` via
-#' [sys.call()] can also be set via `name`, making it possible to avoid
-#' potentially-ugly captured function calls created by `match.call()` in `f`.
-#' @noRd
-pcall = function(f, args, env = parent.frame(), name = substitute(f)) {
+#' When `f` is a [closure], the name of the function in the unevaluated call
+#' provided to `f` via [sys.call()] can also be set via `f_expr`, making it
+#' possible to avoid potentially-ugly captured function calls created by
+#' [match.call()] in `f`.
+#'
+#' Currently, if `f` is a [primitive] function, [invoke()] falls back to using
+#' [do.call()], so `f_expr` cannot be used to set the call expression seen by
+#' [sys.call()] in `f`.
+#'
+#' @returns
+#' The result of evaluating the function `f`.
+#'
+#' @examples
+#' # TODO
+#'
+#' @export
+invoke = function(f, args, env = parent.frame(), f_expr = substitute(f)) {
   # a simpler version of the below would be something like:
   # > do.call(f, args, envir = env)
   # however this would lead to the function call appearing as the
@@ -278,8 +311,7 @@ pcall = function(f, args, env = parent.frame(), name = substitute(f)) {
       # (2) substitute() gives nice-looking expressions
       # (3) parent.frame() gives the the same frame the user called us from
       arg_exprs = lapply(args, promise_expr)
-      if (is.character(name)) name = as.symbol(name)
-      call = as.call(c(list(name), arg_exprs))
+      call = as.call(c(list(f_expr), arg_exprs))
       apply_closure(call, f, args, env)
     },
     special = {
@@ -303,30 +335,13 @@ apply_closure = function(call, fun, args, env) {
 }
 
 
-# auto_partial ------------------------------------------------------------
+# autopartial ------------------------------------------------------------
 
-#' @rdname auto_partial
-#' @param .f A function
-#' @param ... arguments to be partially applied to `.f`
-#' @returns A modified version of `.f` that will automatically be partially
-#' applied if all of its required arguments are not given.
-#' @examples
-#' # create a custom automatically partially applied function
-#' f = auto_partial(function(x, y, z = 3) (x + y) * z)
-#' f()
-#' f(1)
-#' g = f(y = 2)(z = 4)
-#' g
-#' g(1)
-#'
-#' # pass waiver() to optional arguments to use existing values
-#' f(z = waiver())(1, 2)  # uses default z = 3
-#' f(z = 4)(z = waiver())(1, 2)  # uses z = 4
+#' @rdname autopartial
 #' @export
-auto_partial = function(.f, ...) {
-  name = short_function_name(substitute(.f))
+autopartial = function(.f, ...) {
   args = remove_waivers(match_function_args(.f, promise_list(...)))
-  new_auto_partial(.f, args = args, name = name)
+  new_autopartial(.f, args, f_expr = substitute(.f))
 }
 
 #' Partial function application
@@ -336,45 +351,55 @@ auto_partial = function(.f, ...) {
 #' @param ... arguments to be partially applied to `.f`
 #' @noRd
 partial_ = function(.f, ...) {
-  name = short_function_name(substitute(.f))
   args = remove_waivers(match_function_args(.f, promise_list(...)))
-  new_auto_partial(.f, args = args, name = name, required_arg_names = character())
+  new_autopartial(.f, args, required_arg_names = character(), f_expr = substitute(.f))
 }
 
 #' Low-level constructor for automatically partially-applied functions
 #'
+#' @description
 #' Construct a version of the function `f` that is partially applied when called
-#' unless all required arguments have been supplied.
+#' unless all required arguments have been supplied. This is a low-level
+#' constructor that should be used only if you need to manually adjust
+#' `required_arg_names`, `waivable`, or `f_expr`. In most cases, you should use
+#' the higher-level interfaces [autopartial()] or [partial()].
+#'
 #' @param f ([closure] or [primitive]) function to automatically partially-apply
 #' @param args ([list]; typically a [promise_list]) arguments to apply now
+#' @param ... ignored.
 #' @param required_arg_names ([character] vector) names of required arguments
 #' in `f`. When all of these have been supplied, the function will be evaluated.
 #' The default, `find_required_arg_names(f)`, considers all arguments without a
 #' default value in the function definition to be required. Pass `NULL` or
 #' `character()` to get tradition (non-automatic) partial application.
-#' @param name (scalar [character]) the name of the function. Used for printing
-#' purposes only. If `NULL`, the expression passed in for `f` is used if that
-#' expression is a symbol, and `"."` is used otherwise.
 #' @param waivable (scalar [logical]) if `TRUE`, if you pass `waiver()` to an
 #' argument to this function, whatever value that argument already has will be
 #' used instead.
+#' @param f_expr ([language]) an expression representing `f`. Used
+#' primarily for cosmetic purposes, such as printing, and to construct values
+#' given to [sys.call()] in the underlying function.
+#'
 #' @returns a [function] that when called will be partially applied until all of
 #' the arguments in `required_arg_names` have been supplied.
-#' @noRd
-new_auto_partial = function(
+#'
+#' @examples
+#' # TODO
+#'
+#' @export
+new_autopartial = function(
   f,
   args = promise_list(),
+  ...,
   required_arg_names = find_required_arg_names(f),
-  name = NULL,
-  waivable = TRUE
+  waivable = TRUE,
+  f_expr = substitute(f)
 ) {
-  name = name %||% short_function_name(substitute(f))
   stopifnot(
+    "`f_expr` must be a language object" = is.language(f_expr),
     "`f` must be a function" = is.function(f),
-    "`f` cannot be a primitive function without an argument lists, like `if`" = !is.null(args(f)),
+    "`f` cannot be a primitive function without an argument list, like `if`" = !is.null(args(f)),
     "`args` must be a list" = is.list(args) || is.pairlist(args),
     "`required_arg_names` must be a character vector" = is.character(required_arg_names) || is.null(required_arg_names),
-    "`name` must be a string" = is.character(name) && length(name) == 1,
     "`waivable` must be a scalar logical" = is.logical(waivable) && length(waivable) == 1
   )
 
@@ -384,18 +409,24 @@ new_auto_partial = function(
   `>f` = f
   `>args` = args
   `>required_arg_names` = required_arg_names
-  `>name` = name
   `>waivable` = waivable
+  `>f_expr` = f_expr
 
   partial_f = function() {
-    new_args = arg_promise_list()
+    new_args = capture_all()
     if (`>waivable`) new_args = remove_waivers(new_args)
-    `>args` = update_args(`>args`, new_args)
+    args = update_args(`>args`, new_args)
 
-    if (all(`>required_arg_names` %in% names(`>args`))) {
-      pcall(`>f`, `>args`, env = parent.frame(), name = `>name`)
+    if (all(`>required_arg_names` %in% names(args))) {
+      invoke(`>f`, args, env = parent.frame(), f_expr = `>f_expr`)
     } else {
-      new_auto_partial(`>f`, `>args`, `>required_arg_names`, `>name`, `>waivable`)
+      new_autopartial(
+        f = `>f`,
+        args = args,
+        required_arg_names = `>required_arg_names`,
+        waivable = `>waivable`,
+        f_expr = `>f_expr`
+      )
     }
   }
   partial_formals = formals(args(f))
@@ -411,9 +442,9 @@ new_auto_partial = function(
 
   attr(partial_f, "f") = f
   attr(partial_f, "args") = args
-  attr(partial_f, "name") = name
   attr(partial_f, "waivable") = waivable
-  class(partial_f) = c("uneval_auto_partial", "function")
+  attr(partial_f, "f_expr") = f_expr
+  class(partial_f) = c("uneval_autopartial", "function")
   partial_f
 }
 
@@ -422,18 +453,19 @@ short_function_name = function(f_expr) {
 }
 
 #' @export
-print.uneval_auto_partial = function(x, ..., width = getOption("width")) {
-  cat0("<auto_partial", if (attr(x, "waivable")) " with waivers", ">:\n")
+print.uneval_autopartial = function(x, ..., width = getOption("width")) {
+  cat0("<autopartial", if (attr(x, "waivable")) " with waivers", ">:\n")
 
-  name = attr(x, "name") %||% "."
-  cat0(name, " = ")
+  f_expr = attr(x, "f_expr")
+  if (!is.symbol(f_expr)) f_expr = "."
+  cat0(f_expr, " = ")
 
   f = attr(x, "f")
   f_string = utils::capture.output(print(f, width = width - 2, ...))
   cat(f_string, sep = "\n  ")
 
   cat0(format(as.call(c(
-    list(as.name(name)),
+    list(f_expr),
     lapply(attr(x, "args"), promise_expr)
   ))))
 
@@ -509,27 +541,53 @@ is_missing_arg = function(x) {
   missing(x) || identical(x, quote(expr = ))
 }
 
-#' Retrieve a list of promises from arguments in
-#' the surrounding function
-#' @param which the frame number to get call information from.
-#' @returns A list of promises for arguments to the
-#' calling function
-#' @noRd
-arg_promise_list = function(which = sys.parent()) {
-  named_arg_promises = named_arg_promise_list(which)
-  dot_arg_promises = dot_arg_promise_list(which)
-  arg_promises = c(named_arg_promises, dot_arg_promises)
-  # TODO: this line might be redundant / maybe just return arg_promises
-  new_promise_list(match_function_args(sys.function(which), arg_promises))
+#' Capture promises for arguments to a function call
+#'
+#' @description
+#' Capture a list of [promise]s representing arguments to the surrounding
+#' function (or another function specified by `which`).
+#'
+#' @param which (scalar [integer]) the frame number to get call information
+#' from, as returned by a function like [sys.parent()]. The default looks at
+#' the arguments passed to the function that called this one.
+#'
+#' @details
+#' `capture_all()` captures all arguments to the function call.
+#'
+#' @returns A [promise_list] where names are names of arguments to the function
+#' in the given frame and values are the promises corresponding to those
+#' arguments.
+#'
+#' @examples
+#' # captures x, y, z
+#' f = function(x, y, ...) capture_all()
+#' f(1, y = 2, z = 3)
+#'
+#' # captures x, y
+#' f = function(x, y, ...) capture_named()
+#' f(1, y = 2, z = 3)
+#'
+#' # captures z
+#' f = function(x, y, ...) capture_dots()
+#' f(1, y = 2, z = 3)
+#'
+#' @name capture_all
+#' @export
+capture_all = function(which = sys.parent()) {
+  named_args = capture_named(which)
+  dots_args = capture_dots(which)
+  all_args = c(named_args, dots_args)
+  # TODO: this line might be redundant / can maybe just return all_args
+  new_promise_list(match_function_args(sys.function(which), all_args))
 }
 
-#' Retrieve a list of promises from named arguments in
-#' the surrounding function
-#' @param which the frame number to get call information from.
-#' @returns A named list of promises for arguments to the
-#' calling function
-#' @noRd
-named_arg_promise_list = function(which = sys.parent()) {
+#' @details
+#' `capture_named()` captures named arguments (i.e. those explicitly
+#' listed in the function definition).
+#'
+#' @rdname capture_all
+#' @export
+capture_named = function(which = sys.parent()) {
   env = sys.frame(which)
   dots_env = do.call(parent.frame, list(), envir = env)
 
@@ -541,13 +599,12 @@ named_arg_promise_list = function(which = sys.parent()) {
   new_promise_list(promises)
 }
 
-#' Retrieve a list of promises from `...` arguments in
-#' the surrounding function
-#' @param which the frame number to get call information from.
-#' @returns A list of (possibly named) promises for arguments to the
-#' calling function
-#' @noRd
-dot_arg_promise_list = function(which = sys.parent()) {
+#' @details
+#' `capture_dots()` captures arguments passed via `...`
+#'
+#' @rdname capture_all
+#' @export
+capture_dots = function(which = sys.parent()) {
   env = sys.frame(which)
   dots = env$...
   if (missing(dots)) {

@@ -3,17 +3,17 @@ test_that("partial function printing works", {
     x + 1
   }
 
-  add1_auto = auto_partial(add1)
+  add1_auto = autopartial(add1)
 
-  expect_output(print(add1_auto()), "<auto_partial.*add1\\(\\)")
-  expect_output(print(add1_auto(a = 2)), "<auto_partial.*add1\\(a = 2\\)")
-  expect_output(print(add1_auto(a = 2)(a = 3, b = 4)), "<auto_partial.*add1\\(a = 3, b = 4\\)")
+  expect_output(print(add1_auto()), "<autopartial.*add1\\(\\)")
+  expect_output(print(add1_auto(a = 2)), "<autopartial.*add1\\(a = 2\\)")
+  expect_output(print(add1_auto(a = 2)(a = 3, b = 4)), "<autopartial.*add1\\(a = 3, b = 4\\)")
   expect_equal(add1_auto(a = 2)(a = 3, b = 4)(1), 2)
 })
 
 test_that("classic curry-style invocation works", {
   f = function(x, y, z, a = 4) list(x, y, z, a)
-  f = auto_partial(f)
+  f = autopartial(f)
 
   expect_equal(f(1, 2, 3), list(1, 2, 3, 4))
   expect_equal(f(1)(2)(3), list(1, 2, 3, 4))
@@ -22,29 +22,29 @@ test_that("classic curry-style invocation works", {
 })
 
 test_that("function bodies without braces work", {
-  add1_auto_nobrace = auto_partial(function(x, ...) x + 1)
+  add1_auto_nobrace = autopartial(function(x, ...) x + 1)
   expect_equal(add1_auto_nobrace(3), 4)
 })
 
 test_that("functions without arguments work", {
-  expect_equal(auto_partial(function() 5)(), 5)
+  expect_equal(autopartial(function() 5)(), 5)
 })
 
 test_that("wrapper functions work", {
   f = function(x, y = 1, z = 2) {
     y + z
   }
-  f = auto_partial(f)
+  f = autopartial(f)
   g = function(..., y = 2) f(..., y = y)
 
-  expect_output(print(g(y = 2)), "<auto_partial.*f\\(y = y\\)")
+  expect_output(print(g(y = 2)), "<autopartial.*f\\(y = y\\)")
   expect_equal(g(1), f(1, y = 2))
   expect_equal(g(1, y = 3, z = 4), f(1, y = 3, z = 4))
 })
 
 test_that("dots args are not prematurely evaluated", {
   f = function(x, y, z) substitute(y)
-  f = auto_partial(f)
+  f = autopartial(f)
   g = function(...) {
     gz = 3
     f(z = gz, ...)
@@ -61,7 +61,7 @@ test_that("dots args are not prematurely evaluated", {
 
 test_that("dots args are forwarded correctly", {
   f = function(x, y, z) list(x, y, z)
-  f = auto_partial(f)
+  f = autopartial(f)
   g = function(...) {
     gz = 3
     f(z = gz, ...)
@@ -72,7 +72,7 @@ test_that("dots args are forwarded correctly", {
   }
 
   expect_silent(h())
-  expect_s3_class(h(), "uneval_auto_partial")
+  expect_s3_class(h(), "uneval_autopartial")
   expect_output(
     expect_equal(h(x = 1), list(1, 2, 3)),
     "evaluated"
@@ -81,7 +81,7 @@ test_that("dots args are forwarded correctly", {
 
 test_that("waivers are detected correctly", {
   f = function(x = 1, y = 2, z = 3) list(x, y, z)
-  f = auto_partial(f)
+  f = autopartial(f)
   g = function(...) {
     gz = waiver()
     f(z = gz, ...)
@@ -95,36 +95,45 @@ test_that("waivers are detected correctly", {
 })
 
 
-test_that("auto_partial works on primitive functions", {
-  l = auto_partial(log)
+test_that("autopartial works on primitive functions", {
+  l = autopartial(log)
   expect_equal(l(exp(1)), 1)
   expect_equal(l(base = 2)(2), 1)
 })
 
-# match.call() in auto_partial() ------------------------------------------
+# match.call() in autopartial() ------------------------------------------
 
 test_that("match.call supports multiple partial applications", {
   foo = function(x, y, z) match.call()
-  foo = auto_partial(foo)
+  foo = autopartial(foo)
 
   expect_equal(foo(x = 1)(y = 2)(z = 3), quote(foo(x = 1, y = 2, z = 3)))
 })
 
 test_that("match.call() captures expressions, not evaluated values", {
   f = function(x, y, ...) match.call()
-  f = auto_partial(f)
+  f = autopartial(f)
   g = function(...) f(x = stop("x"), ...)
   h = function(...) g(y = stop("y"), ...)
   expect_equal(h(rnorm(10)), quote(f(x = stop("x"), y = stop("y"), rnorm(10))))
 })
 
+test_that("match.call works on unnamed underlying functions", {
+  foo = autopartial(function(x, y, z) match.call())
 
-# parent.frame() in auto_partial() ----------------------------------------
+  expect_equal(
+    foo(x = 1)(y = 2)(z = 3),
+    as.call(list(quote(function(x, y, z) match.call()), x = 1, y = 2, z = 3))
+  )
+})
+
+
+# parent.frame() in autopartial() ----------------------------------------
 
 test_that("parent.frame() captures calling environment", {
   f = function() parent.frame()
   e = new.env()
-  expect_equal(with(e, auto_partial(f)()), e)
+  expect_equal(with(e, autopartial(f)()), e)
 })
 
 
@@ -147,7 +156,7 @@ test_that("is_waiver works", {
 })
 
 test_that("waivers work on arguments with default values", {
-  foo = auto_partial(function(x, a = 2) c(x, a))
+  foo = autopartial(function(x, a = 2) c(x, a))
 
   expect_equal(foo(a = waiver())(1), c(1, 2))
   expect_equal(foo(1, a = waiver()), c(1, 2))
@@ -155,13 +164,13 @@ test_that("waivers work on arguments with default values", {
   expect_equal(foo(a = waiver())(a = 4)(x = 1), c(1, 4))
   expect_equal(foo(a = 4)(a = waiver())(x = 1), c(1, 4))
 
-  foo = auto_partial(function(x, y, a = 3, b = 4) c(x, y, a, b))
+  foo = autopartial(function(x, y, a = 3, b = 4) c(x, y, a, b))
 
   expect_equal(foo(a = waiver(), b = 5)(1)(y = -2, b = waiver()), c(1, -2, 3, 5))
 })
 
 test_that("waivers work on positional arguments", {
-  foo = auto_partial(function(x, y) c(x, y))
+  foo = autopartial(function(x, y) c(x, y))
 
   expect_equal(foo(waiver()), foo())
   expect_equal(foo(x = waiver())(1), foo(1))
@@ -173,7 +182,7 @@ test_that("waivers work on positional arguments", {
 
 test_that("waivers work on initial application", {
   f = function(x = 5) x
-  expect_equal(auto_partial(f, waiver())(), 5)
+  expect_equal(autopartial(f, waiver())(), 5)
   expect_equal(partial_(f, waiver())(), 5)
 })
 
@@ -183,7 +192,7 @@ test_that("promise expressions are not retrieved as byte code", {
   f = function(...) {
     lapply(promise_list(...), promise_expr_)
   }
-  f = auto_partial(f)
+  f = autopartial(f)
   g = compiler::cmpfun(function(...) {
     gx = 5
     f(x = gx, ...)
