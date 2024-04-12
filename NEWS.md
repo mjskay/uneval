@@ -1,3 +1,3 @@
-# autopartial (development version)
+# uneval (development version)
 
 * Initial version.

@@ -1,10 +1,14 @@
-Package: autopartial
-Title: Automatic Partial Function Application
+Package: uneval
+Title: Non-standard Evaluation and Partial Function Application with Promises
 Version: 0.0.0.9000
 Authors@R: c(
         person("Matthew", "Kay", role = c("aut", "cre"), email = "mjskay@northwestern.edu")
     )
-Description: What the package does (one paragraph).
+Description: Provides an approach to non-standard evaluation and partial function application (including
+automatic partial function application, as known as currying) based on R's built-in promises.
+Non-standard evaluation with promises allows both code and execution environment to be captured
+and forwarded to function calls in a manner broadly compatible with existing code that uses
+non-standard evaluation techniques already built in to the language.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
