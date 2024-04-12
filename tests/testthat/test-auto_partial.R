@@ -72,7 +72,7 @@ test_that("dots args are forwarded correctly", {
   }
 
   expect_silent(h())
-  expect_s3_class(h(), "autopartial_function")
+  expect_s3_class(h(), "uneval_auto_partial")
   expect_output(
     expect_equal(h(x = 1), list(1, 2, 3)),
     "evaluated"
@@ -146,7 +146,7 @@ test_that("is_waiver works", {
   expect_true(is_waiver(h(waiver())[[1]]))
 })
 
-test_that("waivers work", {
+test_that("waivers work on arguments with default values", {
   foo = auto_partial(function(x, a = 2) c(x, a))
 
   expect_equal(foo(a = waiver())(1), c(1, 2))
@@ -160,6 +160,22 @@ test_that("waivers work", {
   expect_equal(foo(a = waiver(), b = 5)(1)(y = -2, b = waiver()), c(1, -2, 3, 5))
 })
 
+test_that("waivers work on positional arguments", {
+  foo = auto_partial(function(x, y) c(x, y))
+
+  expect_equal(foo(waiver()), foo())
+  expect_equal(foo(x = waiver())(1), foo(1))
+  expect_equal(foo(1, y = waiver()), foo(1))
+  expect_equal(foo(waiver())(x = 1), foo(1))
+  expect_equal(foo(x = waiver())(x = 4)(y = 1), c(4, 1))
+  expect_equal(foo(4)(x = waiver())(y = 1), c(4, 1))
+})
+
+test_that("waivers work on initial application", {
+  f = function(x = 5) x
+  expect_equal(auto_partial(f, waiver())(), 5)
+  expect_equal(partial_(f, waiver())(), 5)
+})
 
 # promises ----------------------------------------------------------------
 

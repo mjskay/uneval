@@ -3,7 +3,7 @@
 \name{auto_partial}
 \alias{auto_partial}
 \alias{automatic-partial-functions}
-\title{Automatic partial function application in ggdist}
+\title{Automatic partial function application}
 \usage{
 auto_partial(.f, ...)
 }
@@ -17,69 +17,94 @@ A modified version of \code{.f} that will automatically be partially
 applied if all of its required arguments are not given.
 }
 \description{
-Several \pkg{ggdist} functions support \emph{automatic partial application}: when called,
-if all of their required arguments have not been provided, the function returns a
-modified version of itself that uses the arguments passed to it so far as defaults.
-Technically speaking, these functions are essentially "Curried" with respect to
-their required arguments, but I think "automatic partial application" gets
-the idea across more clearly.
+Convert a function into one that supports \emph{automatic partial application}.
+When called, if all of its required arguments have not been provided, an
+\emph{automatically partially-applied} function returns a modified version of
+itself that uses the arguments passed to it so far as defaults. Once all
+required arguments have been supplied, the function is evaluated.
 
-Functions supporting automatic partial application include:
-\itemize{
-\item The \code{\link[=point_interval]{point_interval()}} family, such as \code{\link[=median_qi]{median_qi()}}, \code{\link[=mean_qi]{mean_qi()}},
-\code{\link[=mode_hdi]{mode_hdi()}}, etc.
-\item The \code{smooth_} family, such as \code{\link[=smooth_bounded]{smooth_bounded()}}, \code{\link[=smooth_unbounded]{smooth_unbounded()}},
-\code{\link[=smooth_discrete]{smooth_discrete()}}, and \code{\link[=smooth_bar]{smooth_bar()}}.
-\item The \code{density_} family, such as \code{\link[=density_bounded]{density_bounded()}}, \code{\link[=density_unbounded]{density_unbounded()}} and
-\code{\link[=density_histogram]{density_histogram()}}.
-\item The \link{align} family.
-\item The \link{breaks} family.
-\item The \link{bandwidth} family.
-\item The \link{blur} family.
+\code{auto_partial()} can be considered a form of
+\href{https://en.wikipedia.org/wiki/Currying}{currying} with respect to
+a function's required arguments, but I think \emph{automatic partial application}
+gets the idea across more clearly. \code{auto_partial()} also a number of
+features, like named arguments and defaults, which are not typically
+considered part of the classical definition of currying. See \strong{Details}.
+}
+\details{
+Create an \emph{automatically partially-applied} function by passing it to
+\code{auto_partial()}. The function can be called repeatedly until
+all required arguments (i.e. those that do not have default values
+provided in the function definition) have been supplied, then the function is
+evaluated and the result returned.
+
+For example, consider the function \code{f}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{f = function(x, y, z, a = 4) c(x, y, z, a)
+f = auto_partial(f)
+}\if{html}{\out{</div>}}
+
+It can be called as normal; e.g. \code{f(1, 2, 3)}, which yields \code{c(1, 2, 3, 4)}).
+Equivalently, it could be called as \code{f(1)(2)(3)}, or \code{f(z = 3)(1, 2)},
+or \code{f(y = 2, z = 3)(1)}, or \code{f(y = 2)(1)(3)}, etc. Positional arguments
+can be supplied by position or by name. Named arguments can be supplied
+anywhere in the sequence; e.g. \code{f(a = 7)(1, 2, 3)} is equivalent to
+\code{f(1, 2, 3, a = 7)}.
+
+Arguments supplied in one partial call can be overridden later in the sequence.
+For example, \code{f(1)(x = 2)(x = 3)} is equivalent to just \code{f(x = 3)}.
+
+Arguments may also be passed the special value \code{\link[=waiver]{waiver()}}. If \code{\link[=waiver]{waiver()}} is
+passed to an argument, its default value (or the most recently-partially-applied
+non-\link{waiver} value) is used instead. For example, \code{f(a = waiver())} is
+equivalent to \code{f(a = 4)} (since the default value of \code{a} is \code{4} in the
+definition of \code{f}), and \code{f(x = 1)(x = waiver())} is equivalent to \code{f(x = 1)}.
+}
+\section{Implementation details}{
+
+Great pains are taken to ensure that \link{auto_partial} functions act as much as
+possible like normal R functions.
+
+The initial definition of an \link{auto_partial} function has the same
+\code{\link[=formals]{formals()}} as the function it wraps. When it is further partially applied,
+the \code{\link[=formals]{formals()}} are updated to reflect the expressions of the modified
+arguments. To allow for sequences of applications of positional arguments
+(e.g. \code{f(1)(2)(3)}) to be equivalent to a single application (e.g.
+\code{f(1, 2, 3)}), positional arguments are moved to the back of the \code{\link[=formals]{formals()}}
+list when they are applied.
+
+During partial application, arguments are stored as \link{promise}s and will not
+be evaluated until the underlying function is ultimately called (and even
+then, an argument may not be evaluated if that function does not evaluate
+the argument in question---just like normal R functions). Thus, non-standard
+evaluation constructs like \code{\link[=substitute]{substitute()}} should work correctly within the
+underlying function.
+
+\code{\link[=waiver]{waiver()}} values are detected, as much as possible, without evaluating
+arguments: a \code{\link[=waiver]{waiver()}} is valid only if it is stored in a symbol passed to
+an argument or if \code{waiver()} is passed directly to the argument.
+
+The final function evaluation acts as much as possible like a normal function
+evaluation. The underlying function is called from the same environment that
+the final \link{auto_partial} function is called from, so functions that inspect
+their context (e.g. using \code{\link[=parent.frame]{parent.frame()}}) should work correctly. The call
+expression associated with the function invocation is also constructed
+to reflect all of the partially-applied arguments and the original function
+name, so functions that use \code{\link[=sys.call]{sys.call()}} or \code{\link[=match.call]{match.call()}} should also give
+nice-looking output.
+
+For example, the \code{\link[=density]{density()}} function, which uses both \code{\link[=substitute]{substitute()}} and
+\code{\link[=match.call]{match.call()}} to construct labels for its output, gives identical output
+if invoked directly (e.g. \code{density(rnorm(10))}) or via \link{auto_partial}
+(e.g. \code{auto_partial(density)(rnorm(10))}).
+
+Under the hood, \code{\link[=auto_partial]{auto_partial()}} uses \code{\link[=new_auto_partial]{new_auto_partial()}} to create the
+\emph{automatically partially-applied} function, captures intermediate arguments
+as \link{promise}s using \code{\link[=arg_promise_list]{arg_promise_list()}}, and ultimately uses \code{\link[=pcall]{pcall()}}
+to call the underlying function.
 }
 
-Partial application makes it easier to supply custom parameters to these
-functions when using them inside other functions, such as geoms and stats.
-For example, smoothers for \code{\link[=geom_dots]{geom_dots()}} can be supplied in one of three
-ways:
-\itemize{
-\item as a suffix: \code{geom_dots(smooth = "bounded")}
-\item as a function: \code{geom_dots(smooth = smooth_bounded)}
-\item as a partially-applied function with options:
-\code{geom_dots(smooth = smooth_bounded(kernel = "cosine"))}
-}
-
-Many other common arguments for \pkg{ggdist} functions work similarly; e.g.
-\code{density}, \code{align}, \code{breaks}, \code{bandwidth}, and \code{point_interval} arguments.
-
-These function families (except \code{\link[=point_interval]{point_interval()}}) also support passing
-\link{waiver}s to their optional arguments: if \code{\link[=waiver]{waiver()}} is passed to any
-of these arguments, their default value (or the most
-recently-partially-applied non-\link{waiver} value) is used instead.
-
-Use the \code{\link[=auto_partial]{auto_partial()}} function to create new functions that support
-automatic partial application.
-}
 \examples{
-set.seed(1234)
-x = rnorm(100)
-
-# the first required argument, `x`, of the density_ family is the vector
-# to calculate a kernel density estimate from. If it is not provided, the
-# function is partially applied and returned as-is
-density_unbounded()
-
-# we could create a new function that uses half the default bandwidth
-density_half_bw = density_unbounded(adjust = 0.5)
-density_half_bw
-
-# we can overwrite partially-applied arguments
-density_quarter_bw_trimmed = density_half_bw(adjust = 0.25, trim = TRUE)
-density_quarter_bw_trimmed
-
-# when we eventually call the function and provide the required argument
-# `x`, it is applied using the arguments we have "saved up" so far
-density_quarter_bw_trimmed(x)
+# TODO
 
 # create a custom automatically partially applied function
 f = auto_partial(function(x, y, z = 3) (x + y) * z)

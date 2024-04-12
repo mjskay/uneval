@@ -1,74 +1,92 @@
 #' Automatic partial function application
 #'
 #' @description
+#' Convert a function into one that supports *automatic partial application*.
+#' When called, if all of its required arguments have not been provided, an
+#' *automatically partially-applied* function returns a modified version of
+#' itself that uses the arguments passed to it so far as defaults. Once all
+#' required arguments have been supplied, the function is evaluated.
 #'
-#' Several \pkg{ggdist} functions support *automatic partial application*: when called,
-#' if all of their required arguments have not been provided, the function returns a
-#' modified version of itself that uses the arguments passed to it so far as defaults.
-#' Technically speaking, these functions are essentially "Curried" with respect to
-#' their required arguments, but I think "automatic partial application" gets
-#' the idea across more clearly.
+#' `auto_partial()` can be considered a form of
+#' [currying](https://en.wikipedia.org/wiki/Currying) with respect to
+#' a function's required arguments, but I think *automatic partial application*
+#' gets the idea across more clearly. `auto_partial()` also a number of
+#' features, like named arguments and defaults, which are not typically
+#' considered part of the classical definition of currying. See **Details**.
 #'
-#' Functions supporting automatic partial application include:
+#' @details
+#' Create an *automatically partially-applied* function by passing it to
+#' `auto_partial()`. The function can be called repeatedly until
+#' all required arguments (i.e. those that do not have default values
+#' provided in the function definition) have been supplied, then the function is
+#' evaluated and the result returned.
 #'
-#' - The [point_interval()] family, such as [median_qi()], [mean_qi()],
-#'   [mode_hdi()], etc.
+#' For example, consider the function `f`:
 #'
-#' - The `smooth_` family, such as [smooth_bounded()], [smooth_unbounded()],
-#'   [smooth_discrete()], and [smooth_bar()].
+#' ```r
+#' f = function(x, y, z, a = 4) c(x, y, z, a)
+#' f = auto_partial(f)
+#' ```
 #'
-#' - The `density_` family, such as [density_bounded()], [density_unbounded()] and
-#'   [density_histogram()].
+#' It can be called as normal; e.g. `f(1, 2, 3)`, which yields `c(1, 2, 3, 4)`).
+#' Equivalently, it could be called as `f(1)(2)(3)`, or `f(z = 3)(1, 2)`,
+#' or `f(y = 2, z = 3)(1)`, or `f(y = 2)(1)(3)`, etc. Positional arguments
+#' can be supplied by position or by name. Named arguments can be supplied
+#' anywhere in the sequence; e.g. `f(a = 7)(1, 2, 3)` is equivalent to
+#' `f(1, 2, 3, a = 7)`.
 #'
-#' - The [align] family.
+#' Arguments supplied in one partial call can be overridden later in the sequence.
+#' For example, `f(1)(x = 2)(x = 3)` is equivalent to just `f(x = 3)`.
 #'
-#' - The [breaks] family.
+#' Arguments may also be passed the special value [waiver()]. If [waiver()] is
+#' passed to an argument, its default value (or the most recently-partially-applied
+#' non-[waiver] value) is used instead. For example, `f(a = waiver())` is
+#' equivalent to `f(a = 4)` (since the default value of `a` is `4` in the
+#' definition of `f`), and `f(x = 1)(x = waiver())` is equivalent to `f(x = 1)`.
 #'
-#' - The [bandwidth] family.
+#' @section Implementation details:
+#' Great pains are taken to ensure that [auto_partial] functions act as much as
+#' possible like normal R functions.
 #'
-#' - The [blur] family.
+#' The initial definition of an [auto_partial] function has the same
+#' [formals()] as the function it wraps. When it is further partially applied,
+#' the [formals()] are updated to reflect the expressions of the modified
+#' arguments. To allow for sequences of applications of positional arguments
+#' (e.g. `f(1)(2)(3)`) to be equivalent to a single application (e.g.
+#' `f(1, 2, 3)`), positional arguments are moved to the back of the [formals()]
+#' list when they are applied.
 #'
-#' Partial application makes it easier to supply custom parameters to these
-#' functions when using them inside other functions, such as geoms and stats.
-#' For example, smoothers for [geom_dots()] can be supplied in one of three
-#' ways:
+#' During partial application, arguments are stored as [promise]s and will not
+#' be evaluated until the underlying function is ultimately called (and even
+#' then, an argument may not be evaluated if that function does not evaluate
+#' the argument in question---just like normal R functions). Thus, non-standard
+#' evaluation constructs like [substitute()] should work correctly within the
+#' underlying function.
 #'
-#' - as a suffix: `geom_dots(smooth = "bounded")`
-#' - as a function: `geom_dots(smooth = smooth_bounded)`
-#' - as a partially-applied function with options:
-#'   `geom_dots(smooth = smooth_bounded(kernel = "cosine"))`
+#' [waiver()] values are detected, as much as possible, without evaluating
+#' arguments: a [waiver()] is valid only if it is stored in a symbol passed to
+#' an argument or if `waiver()` is passed directly to the argument.
 #'
-#' Many other common arguments for \pkg{ggdist} functions work similarly; e.g.
-#' `density`, `align`, `breaks`, `bandwidth`, and `point_interval` arguments.
+#' The final function evaluation acts as much as possible like a normal function
+#' evaluation. The underlying function is called from the same environment that
+#' the final [auto_partial] function is called from, so functions that inspect
+#' their context (e.g. using [parent.frame()]) should work correctly. The call
+#' expression associated with the function invocation is also constructed
+#' to reflect all of the partially-applied arguments and the original function
+#' name, so functions that use [sys.call()] or [match.call()] should also give
+#' nice-looking output.
 #'
-#' These function families (except [point_interval()]) also support passing
-#' [waiver]s to their optional arguments: if [waiver()] is passed to any
-#' of these arguments, their default value (or the most
-#' recently-partially-applied non-[waiver] value) is used instead.
+#' For example, the [density()] function, which uses both [substitute()] and
+#' [match.call()] to construct labels for its output, gives identical output
+#' if invoked directly (e.g. `density(rnorm(10))`) or via [auto_partial]
+#' (e.g. `auto_partial(density)(rnorm(10))`).
 #'
-#' Use the [auto_partial()] function to create new functions that support
-#' automatic partial application.
-#'
+#' Under the hood, [auto_partial()] uses [new_auto_partial()] to create the
+#' *automatically partially-applied* function, captures intermediate arguments
+#' as [promise]s using [arg_promise_list()], and ultimately uses [pcall()]
+#' to call the underlying function.
 #' @examples
-#' set.seed(1234)
-#' x = rnorm(100)
-#'
-#' # the first required argument, `x`, of the density_ family is the vector
-#' # to calculate a kernel density estimate from. If it is not provided, the
-#' # function is partially applied and returned as-is
-#' density_unbounded()
-#'
-#' # we could create a new function that uses half the default bandwidth
-#' density_half_bw = density_unbounded(adjust = 0.5)
-#' density_half_bw
-#'
-#' # we can overwrite partially-applied arguments
-#' density_quarter_bw_trimmed = density_half_bw(adjust = 0.25, trim = TRUE)
-#' density_quarter_bw_trimmed
-#'
-#' # when we eventually call the function and provide the required argument
-#' # `x`, it is applied using the arguments we have "saved up" so far
-#' density_quarter_bw_trimmed(x)
+#' # TODO
 #'
 #' @name auto_partial
 #' @aliases automatic-partial-functions
@@ -82,24 +100,11 @@ NULL
 #' A flag indicating that the default value of an argument should be used.
 #'
 #' @details
-#' A [waiver()] is a flag passed to a function argument that indicates the
-#' function should use the default value of that argument. It is used in two
-#' cases:
+#' A [waiver()] is a flag passed to an argument of an [auto_partial] function
+#' that indicates the arguments should keep its default value (or the most
+#' recently partially-applied value of that argument).
 #'
-#' - \pkg{ggplot2} functions use it to distinguish between "nothing" (`NULL`)
-#'    and a default value calculated elsewhere ([waiver()]).
-#'
-#' - \pkg{ggdist} turns \pkg{ggplot2}'s convention into a standardized method of
-#'    argument-passing: any named argument with a default value in an
-#'    [automatically partially-applied function][auto_partial] can be passed
-#'    [waiver()] when calling the function. This will cause the default value
-#'    (or the most recently partially-applied value) of that argument to be used
-#'    instead.
-#'
-#'    **Note:** due to historical limitations, [waiver()] cannot currently be
-#'    used on arguments to the [point_interval()] family of functions.
-#'
-#' @seealso [auto_partial()], [ggplot2::waiver()]
+#' @seealso [auto_partial()]
 #' @examples
 #' f = auto_partial(function(x, y = "b") {
 #'   c(x = x, y = y)
@@ -134,7 +139,7 @@ is_waiver = is_waiver_
 # promise lists -----------------------------------------------------------------
 
 new_promise_list = function(x = list()) {
-  class(x) = "autopartial_promise_list"
+  class(x) = "uneval_promise_list"
   x
 }
 
@@ -147,24 +152,24 @@ promise_list = function(...) {
 }
 
 #' @export
-`[.autopartial_promise_list` = function(x, ...) {
+`[.uneval_promise_list` = function(x, ...) {
   new_promise_list(NextMethod())
 }
 
 #' @export
-print.autopartial_promise_list = function(x, ...) {
+print.uneval_promise_list = function(x, ...) {
   cat0("<promise_list>:\n")
   print(lapply(x, make_printable))
   invisible(x)
 }
 
 #' @export
-format.autopartial_promise_list = function(x, ...) {
+format.uneval_promise_list = function(x, ...) {
   format(lapply(x, make_printable), ...)
 }
 
 #' @export
-print.autopartial_formatted_promise = function(x, ...) {
+print.uneval_formatted_promise = function(x, ...) {
   cat0(x, "\n")
   invisible(x)
 }
@@ -175,7 +180,7 @@ make_printable = function(x) {
     env = promise_env(x)
     structure(
       paste0("<promise: ", deparse0(expr), ", ", format(env), ">"),
-      class = c("autopartial_formatted_promise", "character")
+      class = c("uneval_formatted_promise", "character")
     )
   } else {
     x
@@ -183,7 +188,7 @@ make_printable = function(x) {
 }
 
 is_promise_list = function(x) {
-  inherits(x, "autopartial_promise_list")
+  inherits(x, "uneval_promise_list")
 }
 
 # promises ----------------------------------------------------------------
@@ -319,9 +324,8 @@ apply_closure = function(call, fun, args, env) {
 #' f(z = 4)(z = waiver())(1, 2)  # uses z = 4
 #' @export
 auto_partial = function(.f, ...) {
-  f_expr = substitute(.f)
-  name = if (is.symbol(f_expr)) as.character(f_expr)
-  args = match_function_args(.f, promise_list(...))
+  name = short_function_name(substitute(.f))
+  args = remove_waivers(match_function_args(.f, promise_list(...)))
   new_auto_partial(.f, args = args, name = name)
 }
 
@@ -332,9 +336,8 @@ auto_partial = function(.f, ...) {
 #' @param ... arguments to be partially applied to `.f`
 #' @noRd
 partial_ = function(.f, ...) {
-  f_expr = substitute(.f)
-  name = if (is.symbol(f_expr)) as.character(f_expr)
-  args = match_function_args(.f, promise_list(...))
+  name = short_function_name(substitute(.f))
+  args = remove_waivers(match_function_args(.f, promise_list(...)))
   new_auto_partial(.f, args = args, name = name, required_arg_names = character())
 }
 
@@ -359,16 +362,13 @@ partial_ = function(.f, ...) {
 #' the arguments in `required_arg_names` have been supplied.
 #' @noRd
 new_auto_partial = function(
-    f,
+  f,
   args = promise_list(),
   required_arg_names = find_required_arg_names(f),
   name = NULL,
   waivable = TRUE
 ) {
-  if (is.null(name)) {
-    f_expr = substitute(f)
-    name = if (is.symbol(f_expr)) as.character(f_expr) else "."
-  }
+  name = name %||% short_function_name(substitute(f))
   stopifnot(
     "`f` must be a function" = is.function(f),
     "`f` cannot be a primitive function without an argument lists, like `if`" = !is.null(args(f)),
@@ -413,12 +413,16 @@ new_auto_partial = function(
   attr(partial_f, "args") = args
   attr(partial_f, "name") = name
   attr(partial_f, "waivable") = waivable
-  class(partial_f) = c("autopartial_function", "function")
+  class(partial_f) = c("uneval_auto_partial", "function")
   partial_f
 }
 
+short_function_name = function(f_expr) {
+  if (is.symbol(f_expr)) deparse0(f_expr) else "."
+}
+
 #' @export
-print.autopartial_function = function(x, ..., width = getOption("width")) {
+print.uneval_auto_partial = function(x, ..., width = getOption("width")) {
   cat0("<auto_partial", if (attr(x, "waivable")) " with waivers", ">:\n")
 
   name = attr(x, "name") %||% "."
@@ -481,7 +485,7 @@ update_args = function(old_args, new_args) {
 }
 
 #' @export
-c.autopartial_promise_list = function(...) {
+c.uneval_promise_list = function(...) {
   out = NextMethod()
   if (is.list(out)) out = new_promise_list(out)
   out

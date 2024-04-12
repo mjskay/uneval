@@ -10,22 +10,9 @@ waiver()
 A flag indicating that the default value of an argument should be used.
 }
 \details{
-A \code{\link[=waiver]{waiver()}} is a flag passed to a function argument that indicates the
-function should use the default value of that argument. It is used in two
-cases:
-\itemize{
-\item \pkg{ggplot2} functions use it to distinguish between "nothing" (\code{NULL})
-and a default value calculated elsewhere (\code{\link[=waiver]{waiver()}}).
-\item \pkg{ggdist} turns \pkg{ggplot2}'s convention into a standardized method of
-argument-passing: any named argument with a default value in an
-\link[=auto_partial]{automatically partially-applied function} can be passed
-\code{\link[=waiver]{waiver()}} when calling the function. This will cause the default value
-(or the most recently partially-applied value) of that argument to be used
-instead.
-
-\strong{Note:} due to historical limitations, \code{\link[=waiver]{waiver()}} cannot currently be
-used on arguments to the \code{\link[=point_interval]{point_interval()}} family of functions.
-}
+A \code{\link[=waiver]{waiver()}} is a flag passed to an argument of an \link{auto_partial} function
+that indicates the arguments should keep its default value (or the most
+recently partially-applied value of that argument).
 }
 \examples{
 f = auto_partial(function(x, y = "b") {
@@ -45,5 +32,5 @@ g
 g("a", y = waiver())
 }
 \seealso{
-\code{\link[=auto_partial]{auto_partial()}}, \code{\link[ggplot2:waiver]{ggplot2::waiver()}}
+\code{\link[=auto_partial]{auto_partial()}}
 }
