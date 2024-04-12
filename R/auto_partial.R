@@ -1,4 +1,4 @@
-#' Automatic partial function application in ggdist
+#' Automatic partial function application
 #'
 #' @description
 #'
@@ -116,7 +116,6 @@ NULL
 #'
 #' # uses the last partially-applied value of `y` ("c")
 #' g("a", y = waiver())
-#' @importFrom ggplot2 waiver
 #' @export
 waiver = function() {
   structure(list(), class = "waiver")

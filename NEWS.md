@@ -1,3 +1,3 @@
-# uneval (development version)
+# uneval 0.0.0.9000
 
-* Initial version.
+* Initial version based on code from `{ggdist}`.

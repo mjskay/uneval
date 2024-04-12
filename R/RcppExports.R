@@ -2,30 +2,30 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 unwrap_promise_ <- function(x) {
-    .Call('_uneval_unwrap_promise_', PACKAGE = 'uneval', x)
+    .Call(`_uneval_unwrap_promise_`, x)
 }
 
 find_promise_ <- function(name, env) {
-    .Call('_uneval_find_promise_', PACKAGE = 'uneval', name, env)
+    .Call(`_uneval_find_promise_`, name, env)
 }
 
 promise_expr_ <- function(promise) {
-    .Call('_uneval_promise_expr_', PACKAGE = 'uneval', promise)
+    .Call(`_uneval_promise_expr_`, promise)
 }
 
 promise_env_ <- function(promise) {
-    .Call('_uneval_promise_env_', PACKAGE = 'uneval', promise)
+    .Call(`_uneval_promise_env_`, promise)
 }
 
 is_waiver_ <- function(x) {
-    .Call('_uneval_is_waiver_', PACKAGE = 'uneval', x)
+    .Call(`_uneval_is_waiver_`, x)
 }
 
 dots_to_list_ <- function(dots) {
-    .Call('_uneval_dots_to_list_', PACKAGE = 'uneval', dots)
+    .Call(`_uneval_dots_to_list_`, dots)
 }
 
 apply_closure_ <- function(call, fun, args, env) {
-    .Call('_uneval_apply_closure_', PACKAGE = 'uneval', call, fun, args, env)
+    .Call(`_uneval_apply_closure_`, call, fun, args, env)
 }
 
