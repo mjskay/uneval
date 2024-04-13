@@ -25,24 +25,45 @@
 #'
 #' @details
 #' Create an *automatically partially-applied* function by passing it to
-#' `autopartial()`. The function can be called repeatedly until
+#' `autopartial()`. The resulting function can be called repeatedly until
 #' all required arguments (i.e. those that do not have default values
 #' provided in the function definition) have been supplied, then the function is
 #' evaluated and the result returned.
 #'
 #' For example, consider the function `f`:
 #'
-#' ```r
+#' ```{r}
 #' f = function(x, y, z, a = 4) c(x, y, z, a)
 #' f = autopartial(f)
+#' f
 #' ```
 #'
-#' It can be called as normal; e.g. `f(1, 2, 3)`, which yields `c(1, 2, 3, 4)`).
-#' Equivalently, it could be called as `f(1)(2)(3)`, or `f(z = 3)(1, 2)`,
-#' or `f(y = 2, z = 3)(1)`, or `f(y = 2)(1)(3)`, etc. Positional arguments
-#' can be supplied by position or by name. Named arguments can be supplied
-#' anywhere in the sequence; e.g. `f(a = 7)(1, 2, 3)` is equivalent to
-#' `f(1, 2, 3, a = 7)`.
+#' It can be called as normal:
+#'
+#' ```{r}
+#' f(1, 2, 3)
+#' ```
+#'
+#' If all required arguments haven't been supplied yet, the result is a
+#' partially-applied function:
+#'
+#' ```{r}
+#' f(1)
+#' ```
+#'
+#' These invocations can be chained in arbitrary combinations:
+#'
+#' ```{r}
+#' f(1)(2)(3)
+#' f(z = 3)(1, 2)
+#' f(y = 2, z = 3)(1)
+#' f(y = 2)(1)(3)
+#' # etc ...
+#' ```
+#'
+#' Positional arguments can be supplied by position or by name. Named arguments
+#' can be supplied anywhere in the sequence; e.g. `f(a = 7)(1, 2, 3)` is
+#' equivalent to `f(1, 2, 3, a = 7)`.
 #'
 #' Arguments supplied in one partial call can be overridden later in the sequence.
 #' For example, `f(1)(x = 2)(x = 3)` is equivalent to just `f(x = 3)`.

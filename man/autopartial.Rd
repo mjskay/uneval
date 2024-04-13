@@ -35,7 +35,7 @@ considered part of the classical definition of currying. See \strong{Details}.
 }
 \details{
 Create an \emph{automatically partially-applied} function by passing it to
-\code{autopartial()}. The function can be called repeatedly until
+\code{autopartial()}. The resulting function can be called repeatedly until
 all required arguments (i.e. those that do not have default values
 provided in the function definition) have been supplied, then the function is
 evaluated and the result returned.
@@ -44,14 +44,45 @@ For example, consider the function \code{f}:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{f = function(x, y, z, a = 4) c(x, y, z, a)
 f = autopartial(f)
+f
+#> <autopartial with waivers>:
+#> f = function(x, y, z, a = 4) c(x, y, z, a)
+#>   <environment: 0x0000022716a90658>
+#> f()
 }\if{html}{\out{</div>}}
 
-It can be called as normal; e.g. \code{f(1, 2, 3)}, which yields \code{c(1, 2, 3, 4)}).
-Equivalently, it could be called as \code{f(1)(2)(3)}, or \code{f(z = 3)(1, 2)},
-or \code{f(y = 2, z = 3)(1)}, or \code{f(y = 2)(1)(3)}, etc. Positional arguments
-can be supplied by position or by name. Named arguments can be supplied
-anywhere in the sequence; e.g. \code{f(a = 7)(1, 2, 3)} is equivalent to
-\code{f(1, 2, 3, a = 7)}.
+It can be called as normal:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{f(1, 2, 3)
+#> [1] 1 2 3 4
+}\if{html}{\out{</div>}}
+
+If all required arguments haven't been supplied yet, the result is a
+partially-applied function:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{f(1)
+#> <autopartial with waivers>:
+#> f = function(x, y, z, a = 4) c(x, y, z, a)
+#>   <environment: 0x0000022716a90658>
+#> f(x = 1)
+}\if{html}{\out{</div>}}
+
+These invocations can be chained in arbitrary combinations:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{f(1)(2)(3)
+#> [1] 1 2 3 4
+f(z = 3)(1, 2)
+#> [1] 1 2 3 4
+f(y = 2, z = 3)(1)
+#> [1] 1 2 3 4
+f(y = 2)(1)(3)
+#> [1] 1 2 3 4
+# etc ...
+}\if{html}{\out{</div>}}
+
+Positional arguments can be supplied by position or by name. Named arguments
+can be supplied anywhere in the sequence; e.g. \code{f(a = 7)(1, 2, 3)} is
+equivalent to \code{f(1, 2, 3, a = 7)}.
 
 Arguments supplied in one partial call can be overridden later in the sequence.
 For example, \code{f(1)(x = 2)(x = 3)} is equivalent to just \code{f(x = 3)}.
