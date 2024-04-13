@@ -38,7 +38,7 @@ Call a function using arguments that may be \link{promise}s.
 more like a function call and which allows splicing-in of argument lists
 via assignment to \code{...}.
 
-Currently, if \code{f} is a \link{primitive} function, \code{\link[=invoke]{invoke()}} falls back to using
+Currently, if \code{f} is a \code{\link{primitive}} function, \code{\link[=invoke]{invoke()}} falls back to using
 \code{\link[=do.call]{do.call()}}, so \code{f_expr} cannot be used to set the call expression seen by
 \code{\link[=sys.call]{sys.call()}} in \code{f}.
 }

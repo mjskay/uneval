@@ -17,7 +17,7 @@
 #'
 #' `capture_dots()` captures arguments passed via `...`
 #'
-#' @returns A [`promise_list`] where names are names of arguments to the function
+#' @returns An [`arglist`] where names are names of arguments to the function
 #' in the given frame and values are the promises corresponding to those
 #' arguments.
 #'
@@ -43,9 +43,9 @@ capture_all = function(env = parent.frame()) {
   named_args = capture_named(env)
   dots_args = capture_dots(env)
   all_args = c(named_args, dots_args)
-  # TODO: this line might be redundant / can maybe just return all_args
+  # TODO: this next two lines might be redundant / can maybe just return all_args
   f = do.call(sys.function, list(), envir = env)
-  new_promise_list(match_function_args(f, all_args))
+  new_arglist(match_function_args(f, all_args))
 }
 
 #' @rdname capture_all
@@ -56,7 +56,7 @@ capture_named = function(env = parent.frame()) {
   arg_names = intersect(names(call[-1]), names(formals(args(f))))
   promises = lapply(arg_names, find_promise, env)
   names(promises) = arg_names
-  new_promise_list(promises)
+  new_arglist(promises)
 }
 
 #' @rdname capture_all
@@ -64,9 +64,9 @@ capture_named = function(env = parent.frame()) {
 capture_dots = function(env = parent.frame()) {
   dots = env$...
   if (missing(dots)) {
-    new_promise_list()
+    new_arglist()
   } else {
-    new_promise_list(dots_to_list_(dots))
+    new_arglist(dots_to_list_(dots))
   }
 }
 
@@ -102,9 +102,9 @@ capture_dots = function(env = parent.frame()) {
 #' # very informative...
 #' f(1 + 2)
 #'
-#' # ... we can wrap it in a promise_list to get
+#' # ... we can wrap it in an arglist to get
 #' # more information
-#' promise_list(f(1 + 2))
+#' arglist(f(1 + 2))
 #'
 #' @export
 capture = function(x, env = parent.frame()) {

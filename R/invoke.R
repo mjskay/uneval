@@ -100,7 +100,7 @@ invoke = function(expr, env = parent.frame(), call_env = env, f_expr = substitut
 #' higher-level interface, see [invoke()].
 #'
 #' @param f <[`closure`] | [`primitive`]> function to call
-#' @param args <[`promise_list`] | [`list`] | [`pairlist`]> list of arguments
+#' @param args <[`arglist`] | [`list`] | [`pairlist`]> list of arguments
 #' to call the function with.
 #' @template param-invoke-call_env
 #' @template param-invoke-f_expr

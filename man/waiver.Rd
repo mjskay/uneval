@@ -2,7 +2,7 @@
 % Please edit documentation in R/autopartial.R
 \name{waiver}
 \alias{waiver}
-\title{A waived argument}
+\title{A default argument}
 \usage{
 waiver()
 }

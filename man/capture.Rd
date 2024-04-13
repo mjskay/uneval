@@ -23,7 +23,7 @@ promise is not also a promise.
 }
 
 \strong{NOTE:} Due to the fragility of \code{\link{promise}}s, it is often best to keep them
-in \code{\link{promise_list}}s. If you attempt to assign the results of this function
+in \code{\link{arglist}}s. If you attempt to assign the results of this function
 to a variable instead of passing it directly to another function, it will
 likely be \link[=force]{forced} and no longer be a \code{\link{promise}}.
 }
@@ -38,9 +38,9 @@ f = function(x) capture(x)
 # very informative...
 f(1 + 2)
 
-# ... we can wrap it in a promise_list to get
+# ... we can wrap it in an arglist to get
 # more information
-promise_list(f(1 + 2))
+arglist(f(1 + 2))
 
 }
 \seealso{

@@ -120,7 +120,7 @@ NULL
 
 # waiver ------------------------------------------------------------------
 
-#' A waived argument
+#' A default argument
 #'
 #' A flag indicating that the default value of an argument should be used.
 #'
@@ -247,22 +247,20 @@ partial = function(.f, ...) {
 #' `required_arg_names`, `waivable`, or `f_expr`. In most cases, you should use
 #' the higher-level interfaces [autopartial()] or [partial()].
 #'
-#' @param f ([closure] or [primitive]) function to automatically partially-apply
-#' @param args ([list]; typically a [promise_list]) arguments to apply now
-#' @param required_arg_names ([character] vector) names of required arguments
+#' @param f <[`closure`] | [`primitive`]> function to automatically partially-apply.
+#' @param args <[`list`] | [`pairlist`] | [`arglist`]> arguments to apply now.
+#' @param required_arg_names <[`character`]> names of required arguments
 #' in `f`. When all of these have been supplied, the function will be evaluated.
 #' The default, `find_required_arg_names(f)`, considers all arguments without a
 #' default value in the function definition to be required. Pass `NULL` or
-#' `character()` to get tradition (non-automatic) partial application.
-#' @param waivable (scalar [logical]) if `TRUE`, if you pass `waiver()` to an
+#' `character()` to get traditional (non-automatic) partial application.
+#' @param waivable <[`logical`]> if `TRUE`, if you pass `waiver()` to an
 #' argument to this function, whatever value that argument already has will be
 #' used instead.
-#' @param f_expr ([language]) an expression representing `f`. Used
-#' primarily for cosmetic purposes, such as printing, and to construct values
-#' given to [sys.call()] in the underlying function.
+#' @template param-invoke-f_expr
 #'
-#' @returns a [function] that when called will be partially applied until all of
-#' the arguments in `required_arg_names` have been supplied.
+#' @returns a [`function`] that when called will be partially applied until all
+#' of the arguments in `required_arg_names` have been supplied.
 #'
 #' @seealso [autopartial()] and [partial()] for higher-level interfaces to
 #' constructing partial functions.
@@ -273,7 +271,7 @@ partial = function(.f, ...) {
 #' @export
 new_autopartial = function(
   f,
-  args = promise_list(),
+  args = arglist(),
   required_arg_names = find_required_arg_names(f),
   waivable = TRUE,
   f_expr = substitute(f)
@@ -355,7 +353,7 @@ print.uneval_autopartial = function(x, ..., width = getOption("width")) {
 #' argument list where named arguments have been matched according to R's
 #' argument-matching rules.
 #' @param f a function
-#' @param args a list of arguments, such as returned by [promise_list()].
+#' @param args a list of arguments, such as returned by [arglist()].
 #' Should not contain a `...` argument.
 #' @returns a standardized list of arguments (i.e. where all arguments with
 #' names are named and in order) that can be supplied to `f`, or an error
@@ -393,13 +391,6 @@ update_args = function(old_args, new_args) {
   old_args[updated_names] = new_args[updated_names]
 
   c(old_args, new_args[!names(new_args) %in% updated_names])
-}
-
-#' @export
-c.uneval_promise_list = function(...) {
-  out = NextMethod()
-  if (is.list(out)) out = new_promise_list(out)
-  out
 }
 
 #' Return the names of required arguments for function `f`

@@ -17,7 +17,7 @@ capture_dots(env = parent.frame())
 The default looks at the arguments passed to the function that called this one.}
 }
 \value{
-A \code{\link{promise_list}} where names are names of arguments to the function
+An \code{\link{arglist}} where names are names of arguments to the function
 in the given frame and values are the promises corresponding to those
 arguments.
 }

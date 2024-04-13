@@ -6,34 +6,35 @@
 \usage{
 new_autopartial(
   f,
-  args = promise_list(),
+  args = arglist(),
   required_arg_names = find_required_arg_names(f),
   waivable = TRUE,
   f_expr = substitute(f)
 )
 }
 \arguments{
-\item{f}{(\link{closure} or \link{primitive}) function to automatically partially-apply}
+\item{f}{<\code{\link{closure}} | \code{\link{primitive}}> function to automatically partially-apply.}
 
-\item{args}{(\link{list}; typically a \link{promise_list}) arguments to apply now}
+\item{args}{<\code{\link{list}} | \code{\link{pairlist}} | \code{\link{arglist}}> arguments to apply now.}
 
-\item{required_arg_names}{(\link{character} vector) names of required arguments
+\item{required_arg_names}{<\code{\link{character}}> names of required arguments
 in \code{f}. When all of these have been supplied, the function will be evaluated.
 The default, \code{find_required_arg_names(f)}, considers all arguments without a
 default value in the function definition to be required. Pass \code{NULL} or
-\code{character()} to get tradition (non-automatic) partial application.}
+\code{character()} to get traditional (non-automatic) partial application.}
 
-\item{waivable}{(scalar \link{logical}) if \code{TRUE}, if you pass \code{waiver()} to an
+\item{waivable}{<\code{\link{logical}}> if \code{TRUE}, if you pass \code{waiver()} to an
 argument to this function, whatever value that argument already has will be
 used instead.}
 
-\item{f_expr}{(\link{language}) an expression representing \code{f}. Used
-primarily for cosmetic purposes, such as printing, and to construct values
-given to \code{\link[=sys.call]{sys.call()}} in the underlying function.}
+\item{f_expr}{<\code{\link{language}}> an expression representing \code{f}. This is primarly
+cosmetic; it does not affect what function is called, but may be used for
+printing purposes and will be available as the first element of \code{\link[=sys.call]{sys.call()}}
+within \code{f}.}
 }
 \value{
-a \link{function} that when called will be partially applied until all of
-the arguments in \code{required_arg_names} have been supplied.
+a \code{\link{function}} that when called will be partially applied until all
+of the arguments in \code{required_arg_names} have been supplied.
 }
 \description{
 Construct a version of the function \code{f} that is partially applied when called

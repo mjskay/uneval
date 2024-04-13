@@ -9,7 +9,7 @@ do_invoke(f, args, call_env = parent.frame(), f_expr = substitute(f))
 \arguments{
 \item{f}{<\code{\link{closure}} | \code{\link{primitive}}> function to call}
 
-\item{args}{<\code{\link{promise_list}} | \code{\link{list}} | \code{\link{pairlist}}> list of arguments
+\item{args}{<\code{\link{arglist}} | \code{\link{list}} | \code{\link{pairlist}}> list of arguments
 to call the function with.}
 
 \item{call_env}{<\code{\link{environment}}> environment to call \code{f} from. This will be
@@ -28,7 +28,7 @@ Call a function using an explicit argument list that may contain \link{promise}s
 This is a low-level interface intended to mimic \code{\link[=do.call]{do.call()}}; for a
 higher-level interface, see \code{\link[=invoke]{invoke()}}.
 
-Currently, if \code{f} is a \link{primitive} function, \code{\link[=invoke]{invoke()}} falls back to using
+Currently, if \code{f} is a \code{\link{primitive}} function, \code{\link[=invoke]{invoke()}} falls back to using
 \code{\link[=do.call]{do.call()}}, so \code{f_expr} cannot be used to set the call expression seen by
 \code{\link[=sys.call]{sys.call()}} in \code{f}.
 }
