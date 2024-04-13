@@ -48,6 +48,8 @@ the higher-level interfaces \code{\link[=autopartial]{autopartial()}} or \code{\
 
 }
 \seealso{
-\code{\link[=autopartial]{autopartial()}} and \code{\link[=partial]{partial()}} for higher-level interfaces to
-constructing partial functions.
+Other partial function constructors: 
+\code{\link{autopartial}()},
+\code{\link{partial}()}
 }
+\concept{partial function constructors}

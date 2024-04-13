@@ -7,7 +7,7 @@
 autopartial(.f, ...)
 }
 \arguments{
-\item{.f}{(\link{closure} or \link{primitive}) function to turn into an automatically
+\item{.f}{<\code{\link{closure}} | \code{\link{primitive}}> function to turn into an automatically
 partially-applied function.}
 
 \item{...}{optional arguments to be partially applied to \code{.f}.}
@@ -17,19 +17,19 @@ A modified version of \code{.f} that will automatically be partially
 applied until all of its required arguments have been given.
 }
 \description{
-Construct an \link{autopartial} function; that is, a function that supports
+Construct an \code{autopartial} function; that is, a function that supports
 \emph{automatic partial application}.
 
-When a function created by \code{\link[=autopartial]{autopartial()}} is called,
+When a function created by \code{autopartial()} is called,
 if all of its required arguments have not been provided, it returns a
 modified version of itself that uses the arguments passed to it so far as
 defaults. Once all required arguments have been supplied, the function is
 evaluated.
 
-\code{\link[=autopartial]{autopartial()}} can be considered a form of
+\code{autopartial()} can be considered a form of
 \href{https://en.wikipedia.org/wiki/Currying}{currying} with respect to
 a function's required arguments, but I think \emph{automatic partial application}
-gets the idea across more clearly. \code{\link[=autopartial]{autopartial()}} also has a number of
+gets the idea across more clearly. \code{autopartial()} also has a number of
 features, like named arguments and defaults, which are not typically
 considered part of the classical definition of currying. See \strong{Details}.
 }
@@ -64,10 +64,10 @@ definition of \code{f}), and \code{f(x = 1)(x = waiver())} is equivalent to \cod
 }
 \section{Implementation details}{
 
-Great pains are taken to ensure that \link{autopartial} functions act as much as
+Great pains are taken to ensure that \code{autopartial} functions act as much as
 possible like normal R functions.
 
-The initial definition of an \link{autopartial} function has the same
+The initial definition of an \code{autopartial} function has the same
 \code{\link[=formals]{formals()}} as the function it wraps. When it is further partially applied,
 the \code{\link[=formals]{formals()}} are updated to reflect the expressions of the modified
 arguments. To allow for sequences of applications of positional arguments
@@ -75,7 +75,7 @@ arguments. To allow for sequences of applications of positional arguments
 \code{f(1, 2, 3)}), positional arguments are moved to the back of the \code{\link[=formals]{formals()}}
 list when they are applied.
 
-During partial application, arguments are stored as \link{promise}s and will not
+During partial application, arguments are stored as \code{\link{promise}}s and will not
 be evaluated until the underlying function is ultimately called (and even
 then, an argument may not be evaluated if that function does not evaluate
 the argument in question---just like normal R functions). Thus, non-standard
@@ -88,7 +88,7 @@ an argument or if \code{waiver()} is passed directly to the argument.
 
 The final function evaluation acts as much as possible like a normal function
 evaluation. The underlying function is called from the same environment that
-the final \link{autopartial} function is called from, so functions that inspect
+the final \code{autopartial} function is called from, so functions that inspect
 their context (e.g. using \code{\link[=parent.frame]{parent.frame()}}) should work correctly. The call
 expression associated with the function invocation is also constructed
 to reflect all of the partially-applied arguments and the original function
@@ -97,12 +97,12 @@ nice-looking output.
 
 For example, the \code{\link[=density]{density()}} function, which uses both \code{\link[=substitute]{substitute()}} and
 \code{\link[=match.call]{match.call()}} to construct labels for its output, gives identical output
-if invoked directly (e.g. \code{density(rnorm(10))}) or via \link{autopartial}
+if invoked directly (e.g. \code{density(rnorm(10))}) or via \code{autopartial()}
 (e.g. \code{autopartial(density)(rnorm(10))}).
 
-Under the hood, \code{\link[=autopartial]{autopartial()}} uses \code{\link[=new_autopartial]{new_autopartial()}} to create the
+Under the hood, \code{autopartial()} uses \code{\link[=new_autopartial]{new_autopartial()}} to create the
 \emph{automatically partially-applied} function, captures intermediate arguments
-as \link{promise}s using \code{\link[=capture_all]{capture_all()}}, and ultimately uses \code{\link[=invoke]{invoke()}}
+as \code{\link{promise}}s using \code{\link[=capture_all]{capture_all()}}, and ultimately uses \code{\link[=invoke]{invoke()}}
 to call the underlying function.
 }
 
@@ -121,8 +121,8 @@ f(z = 4)(z = waiver())(1, 2)  # uses z = 4
 
 }
 \seealso{
-\code{\link[=new_autopartial]{new_autopartial()}} for lower-level control when constructing
-(automatic or non-automatic) partial functions.
-
-\code{\link[=partial]{partial()}} to partially apply a function once.
+Other partial function constructors: 
+\code{\link{new_autopartial}()},
+\code{\link{partial}()}
 }
+\concept{partial function constructors}

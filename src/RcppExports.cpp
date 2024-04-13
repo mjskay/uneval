@@ -10,6 +10,17 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// dots_to_list
+List dots_to_list(DottedPair dots);
+RcppExport SEXP _uneval_dots_to_list(SEXP dotsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DottedPair >::type dots(dotsSEXP);
+    rcpp_result_gen = Rcpp::wrap(dots_to_list(dots));
+    return rcpp_result_gen;
+END_RCPP
+}
 // apply_closure_
 SEXP apply_closure_(Language call, RObject fun, DottedPair args, Environment env);
 RcppExport SEXP _uneval_apply_closure_(SEXP callSEXP, SEXP funSEXP, SEXP argsSEXP, SEXP envSEXP) {
@@ -69,25 +80,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dots_to_list_
-List dots_to_list_(DottedPair dots);
-RcppExport SEXP _uneval_dots_to_list_(SEXP dotsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< DottedPair >::type dots(dotsSEXP);
-    rcpp_result_gen = Rcpp::wrap(dots_to_list_(dots));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_uneval_dots_to_list", (DL_FUNC) &_uneval_dots_to_list, 1},
     {"_uneval_apply_closure_", (DL_FUNC) &_uneval_apply_closure_, 4},
     {"_uneval_find_promise", (DL_FUNC) &_uneval_find_promise, 2},
     {"_uneval_promise_expr_", (DL_FUNC) &_uneval_promise_expr_, 1},
     {"_uneval_promise_env_", (DL_FUNC) &_uneval_promise_env_, 1},
     {"_uneval_is_waiver_", (DL_FUNC) &_uneval_is_waiver_, 1},
-    {"_uneval_dots_to_list_", (DL_FUNC) &_uneval_dots_to_list_, 1},
     {NULL, NULL, 0}
 };
 

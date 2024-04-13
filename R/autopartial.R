@@ -1,23 +1,25 @@
+# constructors ------------------------------------------------------------
+
 #' Automatic partial function application
 #'
 #' @description
-#' Construct an [autopartial] function; that is, a function that supports
+#' Construct an `autopartial` function; that is, a function that supports
 #' *automatic partial application*.
 #'
-#' When a function created by [autopartial()] is called,
+#' When a function created by `autopartial()` is called,
 #' if all of its required arguments have not been provided, it returns a
 #' modified version of itself that uses the arguments passed to it so far as
 #' defaults. Once all required arguments have been supplied, the function is
 #' evaluated.
 #'
-#' [autopartial()] can be considered a form of
+#' `autopartial()` can be considered a form of
 #' [currying](https://en.wikipedia.org/wiki/Currying) with respect to
 #' a function's required arguments, but I think *automatic partial application*
-#' gets the idea across more clearly. [autopartial()] also has a number of
+#' gets the idea across more clearly. `autopartial()` also has a number of
 #' features, like named arguments and defaults, which are not typically
 #' considered part of the classical definition of currying. See **Details**.
 #'
-#' @param .f ([closure] or [primitive]) function to turn into an automatically
+#' @param .f <[`closure`] | [`primitive`]> function to turn into an automatically
 #' partially-applied function.
 #' @param ... optional arguments to be partially applied to `.f`.
 #'
@@ -52,10 +54,10 @@
 #' definition of `f`), and `f(x = 1)(x = waiver())` is equivalent to `f(x = 1)`.
 #'
 #' @section Implementation details:
-#' Great pains are taken to ensure that [autopartial] functions act as much as
+#' Great pains are taken to ensure that `autopartial` functions act as much as
 #' possible like normal R functions.
 #'
-#' The initial definition of an [autopartial] function has the same
+#' The initial definition of an `autopartial` function has the same
 #' [formals()] as the function it wraps. When it is further partially applied,
 #' the [formals()] are updated to reflect the expressions of the modified
 #' arguments. To allow for sequences of applications of positional arguments
@@ -63,7 +65,7 @@
 #' `f(1, 2, 3)`), positional arguments are moved to the back of the [formals()]
 #' list when they are applied.
 #'
-#' During partial application, arguments are stored as [promise]s and will not
+#' During partial application, arguments are stored as [`promise`]s and will not
 #' be evaluated until the underlying function is ultimately called (and even
 #' then, an argument may not be evaluated if that function does not evaluate
 #' the argument in question---just like normal R functions). Thus, non-standard
@@ -76,7 +78,7 @@
 #'
 #' The final function evaluation acts as much as possible like a normal function
 #' evaluation. The underlying function is called from the same environment that
-#' the final [autopartial] function is called from, so functions that inspect
+#' the final `autopartial` function is called from, so functions that inspect
 #' their context (e.g. using [parent.frame()]) should work correctly. The call
 #' expression associated with the function invocation is also constructed
 #' to reflect all of the partially-applied arguments and the original function
@@ -85,21 +87,19 @@
 #'
 #' For example, the [density()] function, which uses both [substitute()] and
 #' [match.call()] to construct labels for its output, gives identical output
-#' if invoked directly (e.g. `density(rnorm(10))`) or via [autopartial]
+#' if invoked directly (e.g. `density(rnorm(10))`) or via `autopartial()`
 #' (e.g. `autopartial(density)(rnorm(10))`).
 #'
-#' Under the hood, [autopartial()] uses [new_autopartial()] to create the
+#' Under the hood, `autopartial()` uses [new_autopartial()] to create the
 #' *automatically partially-applied* function, captures intermediate arguments
-#' as [promise]s using [capture_all()], and ultimately uses [invoke()]
+#' as [`promise`]s using [capture_all()], and ultimately uses [invoke()]
 #' to call the underlying function.
 #'
 #' @returns
 #' A modified version of `.f` that will automatically be partially
 #' applied until all of its required arguments have been given.
 #'
-#' @seealso [new_autopartial()] for lower-level control when constructing
-#' (automatic or non-automatic) partial functions.
-#' @seealso [partial()] to partially apply a function once.
+#' @family partial function constructors
 #'
 #' @examples
 #' # create a custom automatically partially-applied function
@@ -114,56 +114,6 @@
 #' f(z = waiver())(1, 2)  # uses default z = 3
 #' f(z = 4)(z = waiver())(1, 2)  # uses z = 4
 #'
-#' @name autopartial
-NULL
-
-
-# waiver ------------------------------------------------------------------
-
-#' A default argument
-#'
-#' A flag indicating that the default value of an argument should be used.
-#'
-#' @details
-#' A [waiver()] is a flag passed to an argument of an [autopartial] function
-#' that indicates the arguments should keep its default value (or the most
-#' recently partially-applied value of that argument).
-#'
-#' @seealso [autopartial()]
-#' @examples
-#' f = autopartial(function(x, y = "b") {
-#'   c(x = x, y = y)
-#' })
-#'
-#' f("a")
-#'
-#' # uses the default value of `y` ("b")
-#' f("a", y = waiver())
-#'
-#' # partially apply `f`
-#' g = f(y = "c")
-#' g
-#'
-#' # uses the last partially-applied value of `y` ("c")
-#' g("a", y = waiver())
-#' @export
-waiver = function() {
-  structure(list(), class = "waiver")
-}
-
-#' waiver-coalescing operator
-#' @noRd
-`%|W|%` = function(x, y) {
-  if (inherits(x, "waiver")) y
-  else x
-}
-
-is_waiver = is_waiver_
-
-
-# constructors ------------------------------------------------------------
-
-#' @rdname autopartial
 #' @export
 autopartial = function(.f, ...) {
   args = remove_waivers(match_function_args(.f, capture_dots()))
@@ -175,7 +125,7 @@ autopartial = function(.f, ...) {
 #' @description
 #' Partially apply a function.
 #'
-#' @param .f ([closure] or [primitive]) function to be partially applied.
+#' @param .f <[`closure`] | [`primitive`]> function to be partially applied.
 #' @param ... arguments to be partially applied to `.f`.
 #'
 #' @details
@@ -193,7 +143,7 @@ autopartial = function(.f, ...) {
 #' @returns
 #' A modified version of `.f` with the arguments in `...` applied to it.
 #'
-#' @seealso [autopartial()] for automatic partial function application.
+#' @family partial function constructors
 #'
 #' @examples
 #' f = function(x, y, z = 3) c(x, y, z)
@@ -231,8 +181,7 @@ partial = function(.f, ...) {
 #' @returns a [`function`] that when called will be partially applied until all
 #' of the arguments in `required_arg_names` have been supplied.
 #'
-#' @seealso [autopartial()] and [partial()] for higher-level interfaces to
-#' constructing partial functions.
+#' @family partial function constructors
 #'
 #' @examples
 #' # TODO
@@ -380,14 +329,4 @@ find_required_arg_names = function(f) {
 #' @noRd
 is_missing_arg = function(x) {
   missing(x) || identical(x, quote(expr = ))
-}
-
-#' Remove waivers from an argument list
-#' @param args a named list of promises
-#' @returns A modified version of `args` with any waived arguments (i.e.
-#' promises for which [is_waiver()] returns `TRUE`) removed
-#' @noRd
-remove_waivers = function(args) {
-  waived = vapply(args, is_waiver, logical(1))
-  args[!waived]
 }

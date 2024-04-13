@@ -65,7 +65,7 @@ capture_dots = function(env = parent.frame()) {
   if (missing(dots)) {
     new_arglist()
   } else {
-    new_arglist(dots_to_list_(dots))
+    new_arglist(dots_to_list(dots))
   }
 }
 

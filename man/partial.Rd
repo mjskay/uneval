@@ -7,7 +7,7 @@
 partial(.f, ...)
 }
 \arguments{
-\item{.f}{(\link{closure} or \link{primitive}) function to be partially applied.}
+\item{.f}{<\code{\link{closure}} | \code{\link{primitive}}> function to be partially applied.}
 
 \item{...}{arguments to be partially applied to \code{.f}.}
 }
@@ -37,5 +37,8 @@ fp(2)
 
 }
 \seealso{
-\code{\link[=autopartial]{autopartial()}} for automatic partial function application.
+Other partial function constructors: 
+\code{\link{autopartial}()},
+\code{\link{new_autopartial}()}
 }
+\concept{partial function constructors}
