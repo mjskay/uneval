@@ -4,14 +4,18 @@
 #'
 #' @description
 #' Capture a list of [promise]s representing arguments to the surrounding
-#' function (or another function specified by `which`).
+#' function call (or another function call specified by its frame, `env`).
 #'
-#' @param which (scalar [integer]) the frame number to get call information
-#' from, as returned by a function like [sys.parent()]. The default looks at
-#' the arguments passed to the function that called this one.
+#' @param env <[`environment`]> the frame to capture arguments from.
+#' The default looks at the arguments passed to the function that called this one.
 #'
 #' @details
 #' `capture_all()` captures all arguments to the function call.
+#'
+#' `capture_named()` captures named arguments (i.e. those explicitly
+#' listed in the function definition).
+#'
+#' `capture_dots()` captures arguments passed via `...`
 #'
 #' @returns A [promise_list] where names are names of arguments to the function
 #' in the given frame and values are the promises corresponding to those
@@ -35,39 +39,29 @@
 #'
 #' @name capture_all
 #' @export
-capture_all = function(which = sys.parent()) {
-  named_args = capture_named(which)
-  dots_args = capture_dots(which)
+capture_all = function(env = parent.frame()) {
+  named_args = capture_named(env)
+  dots_args = capture_dots(env)
   all_args = c(named_args, dots_args)
   # TODO: this line might be redundant / can maybe just return all_args
-  new_promise_list(match_function_args(sys.function(which), all_args))
+  f = do.call(sys.function, list(), envir = env)
+  new_promise_list(match_function_args(f, all_args))
 }
 
-#' @details
-#' `capture_named()` captures named arguments (i.e. those explicitly
-#' listed in the function definition).
-#'
 #' @rdname capture_all
 #' @export
-capture_named = function(which = sys.parent()) {
-  env = sys.frame(which)
-  dots_env = do.call(parent.frame, list(), envir = env)
-
-  f = sys.function(which)
-  call = match.call(f, sys.call(which), envir = dots_env)
+capture_named = function(env = parent.frame()) {
+  f = do.call(sys.function, list(), envir = env)
+  call = do.call(match.call, list(), envir = env)
   arg_names = intersect(names(call[-1]), names(formals(args(f))))
   promises = lapply(arg_names, find_promise, env)
   names(promises) = arg_names
   new_promise_list(promises)
 }
 
-#' @details
-#' `capture_dots()` captures arguments passed via `...`
-#'
 #' @rdname capture_all
 #' @export
-capture_dots = function(which = sys.parent()) {
-  env = sys.frame(which)
+capture_dots = function(env = parent.frame()) {
   dots = env$...
   if (missing(dots)) {
     new_promise_list()

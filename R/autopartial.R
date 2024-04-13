@@ -197,41 +197,127 @@ promise_env = function(x) {
 #' Invoke a function using promises
 #'
 #' @description
-#' Calls a function using an argument list that may contain promises.
+#' Call a function using arguments that may be [promise]s.
+#' [invoke()] is syntactic sugar for [do_invoke()] that is designed to look
+#' more like a function call and which allows splicing-in of argument lists
+#' via assignment to `...`.
 #'
-#' @param f ([closure] or [primitive]) function to call
-#' @param args ([promise_list], [list], or [pairlist]) list of arguments
-#' to call the function with.
-#' @param env ([environment]) environment to call `f` from. This will be
-#' available as [parent.frame()] within `f`.
-#' @param f_expr ([language]) unevaluated expression for the function to
-#' use when constructing the unevaluated call. This is purely cosmetic; it
-#' does not affect what function is called, but will be available as
-#' the first element of [sys.call()] within `f`.
+#' @param expr <unevaluated [`call`]> an expression giving the function and
+#' arguments to be called. Unlike normal functoin invocation, arguments will
+#' not be automatically turned into promises, so must be wrapped in [promise()]
+#' if you wish them to be evaluated lazily. Dots can be passed using `...`, and
+#' lists of arguments can be spliced in using `... = <list of arguments>`.
+#' @param env <[`environment`]> the environment to evaluate the function
+#' definition and arguments extracted from `expr` in.
+#' @template param-invoke-call_env
+#' @template param-invoke-f_expr
 #'
 #' @details
-#' This function is intended as an alternative to [do.call()] that provides
-#' better support for promises when calling [closure]s. In particular,
-#' promises in `args` will be left as-is, allowing precise manipulation of the
-#' expressions and environments of the arguments to `f`.
+#' This function allows you to call another function while explicitly giving
+#' each argument as either an already-evaluated object or as a [`promise`].
 #'
-#' When `f` is a [closure], the name of the function in the unevaluated call
-#' provided to `f` via [sys.call()] can also be set via `f_expr`, making it
-#' possible to avoid potentially-ugly captured function calls created by
-#' [match.call()] in `f`.
+#' Consider a function like this:
 #'
-#' Currently, if `f` is a [primitive] function, [invoke()] falls back to using
-#' [do.call()], so `f_expr` cannot be used to set the call expression seen by
-#' [sys.call()] in `f`.
+#' ```{r}
+#' f = function(...) match.call()
+#' ```
 #'
-#' @returns
-#' The result of evaluating the function `f`.
+#' We can call it as follows:
+#'
+#' ```{r}
+#' y = 2
+#' z = 3
+#' f(1 + 2, x = y + z)
+#' ```
+#'
+#' The standard function invocation `f(1, x = y + z)` creates [`promise`]s for
+#' each argument, ensuring they are lazily evaluated by the underlying call.
+#' Because they are not evaluated, `match.call()` shows the unevaluated
+#' expressions when called.
+#'
+#' `invoke()` makes the creation of argument [`promise`]e explicit, requiring
+#' you to wrap expressions in [promise()] if you wish them to be evaluated
+#' lazily. Thus, the equivalent of the above call with `invoke()` is:
+#'
+#' ```{r}
+#' invoke(f(promise(1 + 2), x = promise(y + z)))
+#' ```
+#'
+#' By making construction of argument [`promise`]s explicit, we can more easily
+#' manipulate when and how arguments are evaluated. For example, we can evaluate
+#' arguments at call time by not wrapping them in [promise()]:
+#'
+#' ```{r}
+#' invoke(f(1 + 2, x = y + z))
+#' ```
+#'
+#' Or, we can pass down argument [`promise`]s captured via [`capture`]:
+#'
+#' ```{r}
+#' g = function(x, ...) invoke(f(1 + 2, x = capture(x), ...))
+#' g(x = y + z, i = j)
+#' ```
+#'
+#' Notice how `...` is also forwarded above, allowing the `i` argument to be
+#' forwarded. Lists of arguments can also be spliced in using `... = `:
+#'
+#' ```{r}
+#' invoke(f(1 + 2, ... = list(x = y + z, i = promise(j)), m = 8))
+#' ```
+#'
+#' @template details-invoke-f_expr
+#'
+#' @template returns-invoke
+#'
+#' @seealso [do_invoke()], the low-level function-calling interface used by
+#' [invoke()].
 #'
 #' @examples
 #' # TODO
 #'
 #' @export
-invoke = function(f, args, env = parent.frame(), f_expr = substitute(f)) {
+invoke = function(expr, env = parent.frame(), call_env = env, f_expr = substitute(expr)[[1]]) {
+  call = substitute(expr)
+  stopifnot(is.call(call))
+
+  f = eval(call[[1]], env)
+  args = eval_args(call[-1], env)
+
+  do_invoke(f, args, call_env = call_env, f_expr = f_expr)
+}
+
+#' Invoke a function using an argument list that may contain promises
+#'
+#' @description
+#' Call a function using an explicit argument list that may contain [promise]s.
+#' This is a low-level interface intended to mimic [do.call()]; for a
+#' higher-level interface, see [invoke()].
+#'
+#' @param f <[`closure`] | [`primitive`]> function to call
+#' @param args <[`promise_list`] | [`list`] | [`pairlist`]> list of arguments
+#' to call the function with.
+#' @template param-invoke-call_env
+#' @template param-invoke-f_expr
+#'
+#' @details
+#' This is intended as an alternative to [do.call()] that provides
+#' better support for promises when calling [`closure`]s. In particular,
+#' promises in `args` will be left as-is, allowing precise manipulation of the
+#' expressions and environments of the arguments to `f` by using functions like
+#' [promise()], [promises()], [capture()], [capture_all()], etc.
+#'
+#' @template details-invoke-f_expr
+#'
+#' @template returns-invoke
+#'
+#' @seealso [invoke()], the higher-level interface to [do_invoke()] intended
+#' for normal use.
+#'
+#' @examples
+#' # TODO
+#'
+#' @export
+do_invoke = function(f, args, call_env = parent.frame(), f_expr = substitute(f)) {
   # a simpler version of the below would be something like:
   # > do.call(f, args, envir = env)
   # however this would lead to the function call appearing as the
@@ -245,15 +331,63 @@ invoke = function(f, args, env = parent.frame(), f_expr = substitute(f)) {
       # (3) parent.frame() gives the the same frame the user called us from
       arg_exprs = lapply(args, promise_expr)
       call = as.call(c(list(f_expr), arg_exprs))
-      apply_closure(call, f, args, env)
+      apply_closure(call, f, args, call_env)
     },
     special = {
       # for primitives / builtins we can at least ensure the calling frame
       # is the same frame the user called us from
-      do.call(f, args, envir = env)
+      do.call(f, args, envir = call_env)
     },
     stop("`f` must be a function, not a ", typeof(f))
   )
+}
+
+#' Evaluate a list of argument expressions in an environment
+#' @param arg_exprs <[`list`]> argument expressions. May contain `...`, which
+#' will be turned into a list of arguments passed down from the surrounding
+#' context. May also contain arguments with the name `...` pointing at lists,
+#' which will be spliced into the argument list
+#' @param env <[`environment`]> frame to evaluate arguments in
+#' @noRd
+eval_args = function(arg_exprs, env) {
+  args = as.list(arg_exprs)
+
+  # convert f(...) into f(... = <list of arguments from dots>) so it can be
+  # spliced in by splice_dots()
+  is_dots = vapply(args, identical, quote(...), FUN.VALUE = logical(1))
+  if (any(is_dots)) {
+    if (is.null(names(args))) names(args) = rep("", length(args))
+    dots_i = which(is_dots)
+    stopifnot(length(dots_i) == 1)
+    args[[dots_i]] = capture_dots(env)
+    names(args)[[dots_i]] = "..."
+  }
+
+  args[!is_dots] = lapply(args[!is_dots], eval, envir = env)
+
+  splice_dots(args)
+}
+
+#' Splice `...` arguments into an argument list
+#' @param args <[`list`]> argument list that may include any number of arguments
+#' named `...` pointing to list-like objects.
+#' @returns list of arguments where elements named `...` have had their contents
+#' spliced into the list
+#' @noRd
+splice_dots = function(args) {
+  if (any(names(args) == "...")) {
+    arg_lists = lapply(seq_along(args), function(i) {
+      name = names(args)[[i]]
+      if (identical(name, "...")) {
+        as.list(args[[i]])
+      } else {
+        setNames(list(args[[i]]), name)
+      }
+    })
+    args = do.call(c, arg_lists)
+  }
+
+  args
 }
 
 #' Call a closure
@@ -325,7 +459,6 @@ partial = function(.f, ...) {
 #'
 #' @param f ([closure] or [primitive]) function to automatically partially-apply
 #' @param args ([list]; typically a [promise_list]) arguments to apply now
-#' @param ... ignored.
 #' @param required_arg_names ([character] vector) names of required arguments
 #' in `f`. When all of these have been supplied, the function will be evaluated.
 #' The default, `find_required_arg_names(f)`, considers all arguments without a
@@ -351,7 +484,6 @@ partial = function(.f, ...) {
 new_autopartial = function(
   f,
   args = promise_list(),
-  ...,
   required_arg_names = find_required_arg_names(f),
   waivable = TRUE,
   f_expr = substitute(f)
@@ -380,15 +512,9 @@ new_autopartial = function(
     args = update_args(`>args`, new_args)
 
     if (all(`>required_arg_names` %in% names(args))) {
-      invoke(`>f`, args, env = parent.frame(), f_expr = `>f_expr`)
+      do_invoke(`>f`, args, call_env = parent.frame(), f_expr = `>f_expr`)
     } else {
-      new_autopartial(
-        f = `>f`,
-        args = args,
-        required_arg_names = `>required_arg_names`,
-        waivable = `>waivable`,
-        f_expr = `>f_expr`
-      )
+      new_autopartial(`>f`, args, `>required_arg_names`, `>waivable`, `>f_expr`)
     }
   }
   partial_formals = formals(args(f))

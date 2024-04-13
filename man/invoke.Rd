@@ -4,44 +4,101 @@
 \alias{invoke}
 \title{Invoke a function using promises}
 \usage{
-invoke(f, args, env = parent.frame(), f_expr = substitute(f))
+invoke(
+  expr,
+  env = parent.frame(),
+  call_env = env,
+  f_expr = substitute(expr)[[1]]
+)
 }
 \arguments{
-\item{f}{(\link{closure} or \link{primitive}) function to call}
+\item{expr}{<unevaluated \code{\link{call}}> an expression giving the function and
+arguments to be called. Unlike normal functoin invocation, arguments will
+not be automatically turned into promises, so must be wrapped in \code{\link[=promise]{promise()}}
+if you wish them to be evaluated lazily. Dots can be passed using \code{...}, and
+lists of arguments can be spliced in using \verb{... = <list of arguments>}.}
 
-\item{args}{(\link{promise_list}, \link{list}, or \link{pairlist}) list of arguments
-to call the function with.}
+\item{env}{<\code{\link{environment}}> the environment to evaluate the function
+definition and arguments extracted from \code{expr} in.}
 
-\item{env}{(\link{environment}) environment to call \code{f} from. This will be
+\item{call_env}{<\code{\link{environment}}> environment to call \code{f} from. This will be
 available as \code{\link[=parent.frame]{parent.frame()}} within \code{f}.}
 
-\item{f_expr}{(\link{language}) unevaluated expression for the function to
-use when constructing the unevaluated call. This is purely cosmetic; it
-does not affect what function is called, but will be available as
-the first element of \code{\link[=sys.call]{sys.call()}} within \code{f}.}
+\item{f_expr}{<\code{\link{language}}> an expression representing \code{f}. This is primarly
+cosmetic; it does not affect what function is called, but may be used for
+printing purposes and will be available as the first element of \code{\link[=sys.call]{sys.call()}}
+within \code{f}.}
 }
 \value{
 The result of evaluating the function \code{f}.
 }
 \description{
-Calls a function using an argument list that may contain promises.
-}
-\details{
-This function is intended as an alternative to \code{\link[=do.call]{do.call()}} that provides
-better support for promises when calling \link{closure}s. In particular,
-promises in \code{args} will be left as-is, allowing precise manipulation of the
-expressions and environments of the arguments to \code{f}.
-
-When \code{f} is a \link{closure}, the name of the function in the unevaluated call
-provided to \code{f} via \code{\link[=sys.call]{sys.call()}} can also be set via \code{f_expr}, making it
-possible to avoid potentially-ugly captured function calls created by
-\code{\link[=match.call]{match.call()}} in \code{f}.
+Call a function using arguments that may be \link{promise}s.
+\code{\link[=invoke]{invoke()}} is syntactic sugar for \code{\link[=do_invoke]{do_invoke()}} that is designed to look
+more like a function call and which allows splicing-in of argument lists
+via assignment to \code{...}.
 
 Currently, if \code{f} is a \link{primitive} function, \code{\link[=invoke]{invoke()}} falls back to using
 \code{\link[=do.call]{do.call()}}, so \code{f_expr} cannot be used to set the call expression seen by
 \code{\link[=sys.call]{sys.call()}} in \code{f}.
 }
+\details{
+This function allows you to call another function while explicitly giving
+each argument as either an already-evaluated object or as a \code{\link{promise}}.
+
+Consider a function like this:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{f = function(...) match.call()
+}\if{html}{\out{</div>}}
+
+We can call it as follows:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{y = 2
+z = 3
+f(1 + 2, x = y + z)
+#> f(1 + 2, x = y + z)
+}\if{html}{\out{</div>}}
+
+The standard function invocation \code{f(1, x = y + z)} creates \code{\link{promise}}s for
+each argument, ensuring they are lazily evaluated by the underlying call.
+Because they are not evaluated, \code{match.call()} shows the unevaluated
+expressions when called.
+
+\code{invoke()} makes the creation of argument \code{\link{promise}}e explicit, requiring
+you to wrap expressions in \code{\link[=promise]{promise()}} if you wish them to be evaluated
+lazily. Thus, the equivalent of the above call with \code{invoke()} is:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{invoke(f(promise(1 + 2), x = promise(y + z)))
+#> f(1 + 2, x = y + z)
+}\if{html}{\out{</div>}}
+
+By making construction of argument \code{\link{promise}}s explicit, we can more easily
+manipulate when and how arguments are evaluated. For example, we can evaluate
+arguments at call time by not wrapping them in \code{\link[=promise]{promise()}}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{invoke(f(1 + 2, x = y + z))
+#> f(3, x = 5)
+}\if{html}{\out{</div>}}
+
+Or, we can pass down argument \code{\link{promise}}s captured via \code{\link{capture}}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{g = function(x, ...) invoke(f(1 + 2, x = capture(x), ...))
+g(x = y + z, i = j)
+#> f(3, x = y + z, i = j)
+}\if{html}{\out{</div>}}
+
+Notice how \code{...} is also forwarded above, allowing the \code{i} argument to be
+forwarded. Lists of arguments can also be spliced in using \verb{... = }:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{invoke(f(1 + 2, ... = list(x = y + z, i = promise(j)), m = 8))
+#> f(3, x = 5, i = j, m = 8)
+}\if{html}{\out{</div>}}
+}
 \examples{
 # TODO
 
+}
+\seealso{
+\code{\link[=do_invoke]{do_invoke()}}, the low-level function-calling interface used by
+\code{\link[=invoke]{invoke()}}.
 }

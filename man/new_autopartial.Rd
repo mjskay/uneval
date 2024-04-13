@@ -7,7 +7,6 @@
 new_autopartial(
   f,
   args = promise_list(),
-  ...,
   required_arg_names = find_required_arg_names(f),
   waivable = TRUE,
   f_expr = substitute(f)
@@ -17,8 +16,6 @@ new_autopartial(
 \item{f}{(\link{closure} or \link{primitive}) function to automatically partially-apply}
 
 \item{args}{(\link{list}; typically a \link{promise_list}) arguments to apply now}
-
-\item{...}{ignored.}
 
 \item{required_arg_names}{(\link{character} vector) names of required arguments
 in \code{f}. When all of these have been supplied, the function will be evaluated.

@@ -6,16 +6,15 @@
 \alias{capture_dots}
 \title{Capture promises for arguments to a function call}
 \usage{
-capture_all(which = sys.parent())
+capture_all(env = parent.frame())
 
-capture_named(which = sys.parent())
+capture_named(env = parent.frame())
 
-capture_dots(which = sys.parent())
+capture_dots(env = parent.frame())
 }
 \arguments{
-\item{which}{(scalar \link{integer}) the frame number to get call information
-from, as returned by a function like \code{\link[=sys.parent]{sys.parent()}}. The default looks at
-the arguments passed to the function that called this one.}
+\item{env}{<\code{\link{environment}}> the frame to capture arguments from.
+The default looks at the arguments passed to the function that called this one.}
 }
 \value{
 A \link{promise_list} where names are names of arguments to the function
@@ -24,7 +23,7 @@ arguments.
 }
 \description{
 Capture a list of \link{promise}s representing arguments to the surrounding
-function (or another function specified by \code{which}).
+function call (or another function call specified by its frame, \code{env}).
 }
 \details{
 \code{capture_all()} captures all arguments to the function call.
