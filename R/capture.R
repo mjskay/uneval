@@ -3,7 +3,7 @@
 #' Capture promises for arguments to a function call
 #'
 #' @description
-#' Capture a list of [promise]s representing arguments to the surrounding
+#' Capture a list of [`promise`]s representing arguments to the surrounding
 #' function call (or another function call specified by its frame, `env`).
 #'
 #' @param env <[`environment`]> the frame to capture arguments from.
@@ -17,11 +17,11 @@
 #'
 #' `capture_dots()` captures arguments passed via `...`
 #'
-#' @returns A [promise_list] where names are names of arguments to the function
+#' @returns A [`promise_list`] where names are names of arguments to the function
 #' in the given frame and values are the promises corresponding to those
 #' arguments.
 #'
-#' @seealso [capture()] for capturing the [promise] associated with a single
+#' @seealso [capture()] for capturing the [`promise`] associated with a single
 #' argument.
 #'
 #' @examples
@@ -76,15 +76,15 @@ capture_dots = function(env = parent.frame()) {
 #' Capture promise for one argument to a function call
 #'
 #' @description
-#' Capture a [promise] representing one argument to the surrounding
+#' Capture a [`promise`] representing one argument to the surrounding
 #' function (or another function specified by `env`).
 #'
-#' @param x (bare [symbol]) the name of the argument.
-#' @param env ([environment]) the environment to search for the promise. The
+#' @param x <bare [`symbol`]> the name of the argument.
+#' @param env <[`environment`]> the environment to search for the promise. The
 #' default looks at the arguments passed to the function that called this one.
 #'
 #' @returns One of:
-#' - If `x` refers to a promise, the promise with the given name from the
+#' - If `x` refers to a [`promise`], the promise with the given name from the
 #'   given environment. Promises whose code is itself a promise (possibly
 #'   recursively) are unwrapped so that the code referred to by the returned
 #'   promise is not also a promise.
@@ -93,7 +93,7 @@ capture_dots = function(env = parent.frame()) {
 #' @template returns-promise
 #'
 #' @seealso [capture_all()], [capture_named()], and [capture_dots()] for
-#' capturing the [promise]s associated with multiple arguments.
+#' capturing the [`promise`]s associated with multiple arguments.
 #'
 #' @examples
 #' f = function(x) capture(x)
@@ -108,9 +108,7 @@ capture_dots = function(env = parent.frame()) {
 #'
 #' @export
 capture = function(x, env = parent.frame()) {
-  expr = substitute(x)
-  stopifnot(is.symbol(expr))
   # seem to need to do wrap the call to find_promise() in a list rather than
   # returning directly to avoid evaluating the promise...
-  list(find_promise(expr, env))[[1]]
+  list(find_promise(substitute(x), env))[[1]]
 }

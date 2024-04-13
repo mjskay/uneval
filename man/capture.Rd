@@ -7,28 +7,28 @@
 capture(x, env = parent.frame())
 }
 \arguments{
-\item{x}{(bare \link{symbol}) the name of the argument.}
+\item{x}{<bare \code{\link{symbol}}> the name of the argument.}
 
-\item{env}{(\link{environment}) the environment to search for the promise. The
+\item{env}{<\code{\link{environment}}> the environment to search for the promise. The
 default looks at the arguments passed to the function that called this one.}
 }
 \value{
 One of:
 \itemize{
-\item If \code{x} refers to a promise, the promise with the given name from the
+\item If \code{x} refers to a \code{\link{promise}}, the promise with the given name from the
 given environment. Promises whose code is itself a promise (possibly
 recursively) are unwrapped so that the code referred to by the returned
 promise is not also a promise.
 \item If \code{x} does not refer to a promise, it is returned as-is.
 }
 
-\strong{NOTE:} Due to the fragility of \link{promise}s, it is often best to keep them in
-\link{promise_list}s. If you attempt to assign the results of this function to
-a variable instead of passing it directly to another function, it will
-likely be \link{force}d and no longer be a \link{promise}.
+\strong{NOTE:} Due to the fragility of \code{\link{promise}}s, it is often best to keep them
+in \code{\link{promise_list}}s. If you attempt to assign the results of this function
+to a variable instead of passing it directly to another function, it will
+likely be \link[=force]{forced} and no longer be a \code{\link{promise}}.
 }
 \description{
-Capture a \link{promise} representing one argument to the surrounding
+Capture a \code{\link{promise}} representing one argument to the surrounding
 function (or another function specified by \code{env}).
 }
 \examples{
@@ -45,5 +45,5 @@ promise_list(f(1 + 2))
 }
 \seealso{
 \code{\link[=capture_all]{capture_all()}}, \code{\link[=capture_named]{capture_named()}}, and \code{\link[=capture_dots]{capture_dots()}} for
-capturing the \link{promise}s associated with multiple arguments.
+capturing the \code{\link{promise}}s associated with multiple arguments.
 }

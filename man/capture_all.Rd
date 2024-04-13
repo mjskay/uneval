@@ -17,12 +17,12 @@ capture_dots(env = parent.frame())
 The default looks at the arguments passed to the function that called this one.}
 }
 \value{
-A \link{promise_list} where names are names of arguments to the function
+A \code{\link{promise_list}} where names are names of arguments to the function
 in the given frame and values are the promises corresponding to those
 arguments.
 }
 \description{
-Capture a list of \link{promise}s representing arguments to the surrounding
+Capture a list of \code{\link{promise}}s representing arguments to the surrounding
 function call (or another function call specified by its frame, \code{env}).
 }
 \details{
@@ -48,6 +48,6 @@ f(1, y = 2, z = 3)
 
 }
 \seealso{
-\code{\link[=capture]{capture()}} for capturing the \link{promise} associated with a single
+\code{\link[=capture]{capture()}} for capturing the \code{\link{promise}} associated with a single
 argument.
 }
