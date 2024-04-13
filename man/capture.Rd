@@ -45,5 +45,5 @@ arglist(f(1 + 2))
 }
 \seealso{
 \code{\link[=capture_all]{capture_all()}}, \code{\link[=capture_named]{capture_named()}}, and \code{\link[=capture_dots]{capture_dots()}} for
-capturing the \code{\link{promise}}s associated with multiple arguments.
+capturing the \code{\link{promise}}s associated with multiple function arguments.
 }

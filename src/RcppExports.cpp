@@ -10,14 +10,17 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// unwrap_promise_
-SEXP unwrap_promise_(SEXP x);
-RcppExport SEXP _uneval_unwrap_promise_(SEXP xSEXP) {
+// apply_closure_
+SEXP apply_closure_(Language call, RObject fun, DottedPair args, Environment env);
+RcppExport SEXP _uneval_apply_closure_(SEXP callSEXP, SEXP funSEXP, SEXP argsSEXP, SEXP envSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(unwrap_promise_(x));
+    Rcpp::traits::input_parameter< Language >::type call(callSEXP);
+    Rcpp::traits::input_parameter< RObject >::type fun(funSEXP);
+    Rcpp::traits::input_parameter< DottedPair >::type args(argsSEXP);
+    Rcpp::traits::input_parameter< Environment >::type env(envSEXP);
+    rcpp_result_gen = Rcpp::wrap(apply_closure_(call, fun, args, env));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -77,29 +80,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// apply_closure_
-SEXP apply_closure_(Language call, RObject fun, DottedPair args, Environment env);
-RcppExport SEXP _uneval_apply_closure_(SEXP callSEXP, SEXP funSEXP, SEXP argsSEXP, SEXP envSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Language >::type call(callSEXP);
-    Rcpp::traits::input_parameter< RObject >::type fun(funSEXP);
-    Rcpp::traits::input_parameter< DottedPair >::type args(argsSEXP);
-    Rcpp::traits::input_parameter< Environment >::type env(envSEXP);
-    rcpp_result_gen = Rcpp::wrap(apply_closure_(call, fun, args, env));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_uneval_unwrap_promise_", (DL_FUNC) &_uneval_unwrap_promise_, 1},
+    {"_uneval_apply_closure_", (DL_FUNC) &_uneval_apply_closure_, 4},
     {"_uneval_find_promise", (DL_FUNC) &_uneval_find_promise, 2},
     {"_uneval_promise_expr_", (DL_FUNC) &_uneval_promise_expr_, 1},
     {"_uneval_promise_env_", (DL_FUNC) &_uneval_promise_env_, 1},
     {"_uneval_is_waiver_", (DL_FUNC) &_uneval_is_waiver_, 1},
     {"_uneval_dots_to_list_", (DL_FUNC) &_uneval_dots_to_list_, 1},
-    {"_uneval_apply_closure_", (DL_FUNC) &_uneval_apply_closure_, 4},
     {NULL, NULL, 0}
 };
 

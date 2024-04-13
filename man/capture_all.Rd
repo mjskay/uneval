@@ -49,5 +49,5 @@ f(1, y = 2, z = 3)
 }
 \seealso{
 \code{\link[=capture]{capture()}} for capturing the \code{\link{promise}} associated with a single
-argument.
+function argument.
 }

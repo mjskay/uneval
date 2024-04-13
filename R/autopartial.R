@@ -161,38 +161,7 @@ waiver = function() {
 is_waiver = is_waiver_
 
 
-# promises ----------------------------------------------------------------
-
-promises = function(...) {
-  capture_dots()
-}
-
-new_promise = function(expr, env = parent.frame()) {
-  do.call(promises, list(expr), envir = env)[[1]]
-}
-
-promise = function(x, env = parent.frame()) {
-  new_promise(substitute(x), env)
-}
-
-promise_expr = function(x) {
-  if (typeof(x) == "promise") {
-    promise_expr_(x)
-  } else {
-    x
-  }
-}
-
-promise_env = function(x) {
-  if (typeof(x) == "promise") {
-    promise_env_(x)
-  } else {
-    NULL
-  }
-}
-
-
-# autopartial ------------------------------------------------------------
+# constructors ------------------------------------------------------------
 
 #' @rdname autopartial
 #' @export
@@ -325,9 +294,8 @@ new_autopartial = function(
   partial_f
 }
 
-short_function_name = function(f_expr) {
-  if (is.symbol(f_expr)) deparse0(f_expr) else "."
-}
+
+# printing ----------------------------------------------------------------
 
 #' @export
 print.uneval_autopartial = function(x, ..., width = getOption("width")) {
@@ -348,6 +316,9 @@ print.uneval_autopartial = function(x, ..., width = getOption("width")) {
 
   invisible(x)
 }
+
+
+# helpers -----------------------------------------------------------------
 
 #' Given a function and a list of arguments, return a modified version of the
 #' argument list where named arguments have been matched according to R's
@@ -419,18 +390,4 @@ is_missing_arg = function(x) {
 remove_waivers = function(args) {
   waived = vapply(args, is_waiver, logical(1))
   args[!waived]
-}
-
-#' turn arguments that are in the given environment into expressions instead
-#' of promises
-#' @param args a named list of promises
-#' @param env an environment
-#' @returns a named list of promises and unevaluated expressions, where promises
-#' with the environment `env` have been turned into their corresponding
-#' expressions
-#' @noRd
-unpromise_in_env = function(args, env) {
-  lapply(args, function(arg) {
-    if (identical(promise_env(arg), env)) promise_expr(arg) else arg
-  })
 }

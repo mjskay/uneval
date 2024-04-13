@@ -21,8 +21,7 @@
 #' in the given frame and values are the promises corresponding to those
 #' arguments.
 #'
-#' @seealso [capture()] for capturing the [`promise`] associated with a single
-#' argument.
+#' @template seealso-capture
 #'
 #' @examples
 #' # captures x, y, z
@@ -90,10 +89,9 @@ capture_dots = function(env = parent.frame()) {
 #'   promise is not also a promise.
 #' - If `x` does not refer to a promise, it is returned as-is.
 #'
-#' @template returns-promise
+#' @template returns-promise-warning
 #'
-#' @seealso [capture_all()], [capture_named()], and [capture_dots()] for
-#' capturing the [`promise`]s associated with multiple arguments.
+#' @template seealso-capture-args
 #'
 #' @examples
 #' f = function(x) capture(x)

@@ -9,8 +9,7 @@ using namespace Rcpp;
  * - If `x` is a promise: a promise whose code is not a promise
  * - If `x` is not a promise: `x`
  */
-// [[Rcpp::export]]
-SEXP unwrap_promise_(SEXP x) {
+SEXP unwrap_promise(SEXP x) {
   RObject expr = x;
   while (TYPEOF(expr) == PROMSXP) {
     x = expr;
@@ -29,18 +28,18 @@ SEXP unwrap_promise_(SEXP x) {
 // [[Rcpp::export]]
 SEXP find_promise(Symbol name, Environment env) {
   RObject var = Rf_findVar(name, env);
-  return unwrap_promise_(var);
+  return unwrap_promise(var);
 }
 
 // [[Rcpp::export]]
 SEXP promise_expr_(Promise promise) {
-  promise = unwrap_promise_(promise);
+  promise = unwrap_promise(promise);
   return PREXPR(promise);
 }
 
 // [[Rcpp::export]]
 SEXP promise_env_(Promise promise) {
-  promise = unwrap_promise_(promise);
+  promise = unwrap_promise(promise);
   return PRENV(promise);
 }
 
@@ -60,7 +59,7 @@ bool is_waiver_call(SEXP x) {
 // [[Rcpp::export]]
 bool is_waiver_(RObject x) {
   if (TYPEOF(x) == PROMSXP) {
-    x = unwrap_promise_(x);
+    x = unwrap_promise(x);
     RObject expr = PREXPR(x);
 
     if (TYPEOF(expr) == SYMSXP) {
@@ -89,18 +88,9 @@ List dots_to_list_(DottedPair dots) {
   list.names() = dots.attr("names");
 
   for (int i = 0; i < n; i++) {
-    list[i] = unwrap_promise_(dots[0]);
+    list[i] = unwrap_promise(dots[0]);
     dots.remove(0);
   }
 
   return list;
-}
-
-// [[Rcpp::export]]
-SEXP apply_closure_(Language call, RObject fun, DottedPair args, Environment env) {
-  if (TYPEOF(fun) != CLOSXP) {
-    const char* fmt = "`fun` must be a closure: [type=%s; target=CLOSXP].";
-    throw not_compatible(fmt, Rf_type2char(TYPEOF(fun)));
-  }
-  return Rf_applyClosure(call, fun, args, env, R_NilValue);
 }
