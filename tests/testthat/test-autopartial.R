@@ -1,3 +1,5 @@
+# autopartial -------------------------------------------------------------
+
 test_that("partial function printing works", {
   add1 = function(x, ...) {
     x + 1
@@ -79,22 +81,6 @@ test_that("dots args are forwarded correctly", {
   )
 })
 
-test_that("waivers are detected correctly", {
-  f = function(x = 1, y = 2, z = 3) list(x, y, z)
-  f = autopartial(f)
-  g = function(...) {
-    gz = waiver()
-    f(z = gz, ...)
-  }
-  h = function(...) {
-    g(y = waiver(), ...)
-  }
-
-  expect_equal(g(), list(1, 2, 3))
-  expect_equal(h(x = waiver()), list(1, 2, 3))
-})
-
-
 test_that("autopartial works on primitive functions", {
   l = autopartial(log)
   expect_equal(l(exp(1)), 1)
@@ -144,54 +130,4 @@ test_that("parent.frame() captures calling environment", {
   f = function() parent.frame()
   e = new.env()
   expect_equal(with(e, autopartial(f)()), e)
-})
-
-
-# waivers -----------------------------------------------------------------
-
-test_that("is_waiver works", {
-  x = waiver()
-
-  expect_true(is_waiver(x))
-  expect_true(is_waiver(waiver()))
-
-  expect_true(is_waiver(new_promise(quote(x))))
-  expect_true(is_waiver(new_promise(quote(waiver()))))
-
-  f = function(x) capture(x)
-  g = function(y) f(y)
-  h = compiler::cmpfun(function(z) g(z))
-  expect_true(is_waiver(h(x)))
-  expect_true(is_waiver(h(waiver())))
-})
-
-test_that("waivers work on arguments with default values", {
-  foo = autopartial(function(x, a = 2) c(x, a))
-
-  expect_equal(foo(a = waiver())(1), c(1, 2))
-  expect_equal(foo(1, a = waiver()), c(1, 2))
-  expect_equal(foo(a = waiver())(x = 1), c(1, 2))
-  expect_equal(foo(a = waiver())(a = 4)(x = 1), c(1, 4))
-  expect_equal(foo(a = 4)(a = waiver())(x = 1), c(1, 4))
-
-  foo = autopartial(function(x, y, a = 3, b = 4) c(x, y, a, b))
-
-  expect_equal(foo(a = waiver(), b = 5)(1)(y = -2, b = waiver()), c(1, -2, 3, 5))
-})
-
-test_that("waivers work on positional arguments", {
-  foo = autopartial(function(x, y) c(x, y))
-
-  expect_equal(foo(waiver()), foo())
-  expect_equal(foo(x = waiver())(1), foo(1))
-  expect_equal(foo(1, y = waiver()), foo(1))
-  expect_equal(foo(waiver())(x = 1), foo(1))
-  expect_equal(foo(x = waiver())(x = 4)(y = 1), c(4, 1))
-  expect_equal(foo(4)(x = waiver())(y = 1), c(4, 1))
-})
-
-test_that("waivers work on initial application", {
-  f = function(x = 5) x
-  expect_equal(autopartial(f, waiver())(), 5)
-  expect_equal(partial(f, waiver())(), 5)
 })

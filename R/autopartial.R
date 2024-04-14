@@ -68,11 +68,11 @@
 #' Arguments supplied in one partial call can be overridden later in the sequence.
 #' For example, `f(1)(x = 2)(x = 3)` is equivalent to just `f(x = 3)`.
 #'
-#' Arguments may also be passed the special value [waiver()]. If [waiver()] is
+#' Arguments may also be passed the special value [DEFAULT()]. If [DEFAULT()] is
 #' passed to an argument, its default value (or the most recently-partially-applied
-#' non-[waiver] value) is used instead. For example, `f(a = waiver())` is
+#' non-[`DEFAULT`] value) is used instead. For example, `f(a = DEFAULT())` is
 #' equivalent to `f(a = 4)` (since the default value of `a` is `4` in the
-#' definition of `f`), and `f(x = 1)(x = waiver())` is equivalent to `f(x = 1)`.
+#' definition of `f`), and `f(x = 1)(x = DEFAULT())` is equivalent to `f(x = 1)`.
 #'
 #' @section Implementation details:
 #' Great pains are taken to ensure that `autopartial` functions act as much as
@@ -93,9 +93,9 @@
 #' evaluation constructs like [substitute()] should work correctly within the
 #' underlying function.
 #'
-#' [waiver()] values are detected, as much as possible, without evaluating
-#' arguments: a [waiver()] is valid only if it is stored in a symbol passed to
-#' an argument or if `waiver()` is passed directly to the argument.
+#' [DEFAULT()] values are detected, as much as possible, without evaluating
+#' arguments: a [DEFAULT()] is valid only if it is stored in a symbol passed to
+#' an argument or if `DEFAULT()` is passed directly to the argument.
 #'
 #' The final function evaluation acts as much as possible like a normal function
 #' evaluation. The underlying function is called from the same environment that
@@ -131,13 +131,13 @@
 #' g
 #' g(1)
 #'
-#' # pass waiver() to optional arguments to use existing values
-#' f(z = waiver())(1, 2)  # uses default z = 3
-#' f(z = 4)(z = waiver())(1, 2)  # uses z = 4
+#' # pass DEFAULT() to optional arguments to use existing values
+#' f(z = DEFAULT())(1, 2)  # uses default z = 3
+#' f(z = 4)(z = DEFAULT())(1, 2)  # uses z = 4
 #'
 #' @export
 autopartial = function(.f, ...) {
-  args = remove_waivers(match_function_args(.f, capture_dots()))
+  args = remove_defaults(match_function_args(.f, capture_dots()))
   new_autopartial(.f, args, f_expr = substitute(.f))
 }
 
@@ -154,7 +154,7 @@ autopartial = function(.f, ...) {
 #' [autopartial()], except that the next invocation will evaluate the function
 #' rather than waiting for all required arguments to be supplied.
 #'
-#' Arguments may also be passed the special value [waiver()]. If [waiver()] is
+#' Arguments may also be passed the special value [DEFAULT()]. If [DEFAULT()] is
 #' passed to an argument, its default value is used instead.
 #'
 #' Great pains are taken to ensure that the resulting function acts as much as
@@ -174,7 +174,7 @@ autopartial = function(.f, ...) {
 #'
 #' @export
 partial = function(.f, ...) {
-  args = remove_waivers(match_function_args(.f, capture_dots()))
+  args = remove_defaults(match_function_args(.f, capture_dots()))
   new_autopartial(.f, args, required_arg_names = character(), f_expr = substitute(.f))
 }
 
@@ -184,7 +184,7 @@ partial = function(.f, ...) {
 #' Construct a version of the function `f` that is partially applied when called
 #' unless all required arguments have been supplied. This is a low-level
 #' constructor that should be used only if you need to manually adjust
-#' `required_arg_names`, `waivable`, or `f_expr`. In most cases, you should use
+#' `required_arg_names`, `allow_defaults`, or `f_expr`. In most cases, you should use
 #' the higher-level interfaces [autopartial()] or [partial()].
 #'
 #' @param f <[`closure`] | [`primitive`]> function to automatically partially-apply.
@@ -194,7 +194,7 @@ partial = function(.f, ...) {
 #' The default, `find_required_arg_names(f)`, considers all arguments without a
 #' default value in the function definition to be required. Pass `NULL` or
 #' `character()` to get traditional (non-automatic) partial application.
-#' @param waivable <[`logical`]> if `TRUE`, if you pass `waiver()` to an
+#' @param allow_defaults <[`logical`]> if `TRUE`, if you pass `DEFAULT()` to an
 #' argument to this function, whatever value that argument already has will be
 #' used instead.
 #' @template param-invoke-f_expr
@@ -212,7 +212,7 @@ new_autopartial = function(
   f,
   args = arglist(),
   required_arg_names = find_required_arg_names(f),
-  waivable = TRUE,
+  allow_defaults = TRUE,
   f_expr = substitute(f)
 ) {
   stopifnot(
@@ -221,7 +221,7 @@ new_autopartial = function(
     "`f` cannot be a primitive function without an argument list, like `if`" = !is.null(args(f)),
     "`args` must be a list" = is.list(args) || is.pairlist(args),
     "`required_arg_names` must be a character vector" = is.character(required_arg_names) || is.null(required_arg_names),
-    "`waivable` must be a scalar logical" = is.logical(waivable) && length(waivable) == 1
+    "`allow_defaults` must be a scalar logical" = is.logical(allow_defaults) && length(allow_defaults) == 1
   )
 
   # we use these weird names to avoid clashing with argument names in f,
@@ -230,18 +230,18 @@ new_autopartial = function(
   `>f` = f
   `>args` = args
   `>required_arg_names` = required_arg_names
-  `>waivable` = waivable
+  `>allow_defaults` = allow_defaults
   `>f_expr` = f_expr
 
   partial_f = function() {
     new_args = capture_all()
-    if (`>waivable`) new_args = remove_waivers(new_args)
+    if (`>allow_defaults`) new_args = remove_defaults(new_args)
     args = update_args(`>args`, new_args)
 
     if (all(`>required_arg_names` %in% names(args))) {
       do_invoke(`>f`, args, call_env = parent.frame(), f_expr = `>f_expr`)
     } else {
-      new_autopartial(`>f`, args, `>required_arg_names`, `>waivable`, `>f_expr`)
+      new_autopartial(`>f`, args, `>required_arg_names`, `>allow_defaults`, `>f_expr`)
     }
   }
   partial_formals = formals(args(f))
@@ -258,7 +258,7 @@ new_autopartial = function(
 
   attr(partial_f, "f") = f
   attr(partial_f, "args") = args
-  attr(partial_f, "waivable") = waivable
+  attr(partial_f, "allow_defaults") = allow_defaults
   attr(partial_f, "f_expr") = f_expr
   class(partial_f) = c("uneval_autopartial", "function")
   partial_f
@@ -269,7 +269,7 @@ new_autopartial = function(
 
 #' @export
 print.uneval_autopartial = function(x, ..., width = getOption("width")) {
-  cat0("<autopartial", if (attr(x, "waivable")) " with waivers", ">:\n")
+  cat0("<autopartial", if (attr(x, "allow_defaults")) " with DEFAULTs", ">:\n")
 
   f_expr = attr(x, "f_expr")
   if (!is.symbol(f_expr)) f_expr = "."

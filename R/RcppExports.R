@@ -5,6 +5,10 @@ dots_to_list <- function(dots) {
     .Call(`_uneval_dots_to_list`, dots)
 }
 
+is_default_ <- function(x) {
+    .Call(`_uneval_is_default_`, x)
+}
+
 apply_closure_ <- function(call, fun, args, env) {
     .Call(`_uneval_apply_closure_`, call, fun, args, env)
 }
@@ -19,9 +23,5 @@ promise_expr_ <- function(promise) {
 
 promise_env_ <- function(promise) {
     .Call(`_uneval_promise_env_`, promise)
-}
-
-is_waiver_ <- function(x) {
-    .Call(`_uneval_is_waiver_`, x)
 }
 

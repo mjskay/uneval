@@ -21,6 +21,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// is_default_
+bool is_default_(RObject x);
+RcppExport SEXP _uneval_is_default_(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< RObject >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(is_default_(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // apply_closure_
 SEXP apply_closure_(Language call, RObject fun, DottedPair args, Environment env);
 RcppExport SEXP _uneval_apply_closure_(SEXP callSEXP, SEXP funSEXP, SEXP argsSEXP, SEXP envSEXP) {
@@ -69,25 +80,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// is_waiver_
-bool is_waiver_(RObject x);
-RcppExport SEXP _uneval_is_waiver_(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RObject >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(is_waiver_(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_uneval_dots_to_list", (DL_FUNC) &_uneval_dots_to_list, 1},
+    {"_uneval_is_default_", (DL_FUNC) &_uneval_is_default_, 1},
     {"_uneval_apply_closure_", (DL_FUNC) &_uneval_apply_closure_, 4},
     {"_uneval_find_promise", (DL_FUNC) &_uneval_find_promise, 2},
     {"_uneval_promise_expr_", (DL_FUNC) &_uneval_promise_expr_, 1},
     {"_uneval_promise_env_", (DL_FUNC) &_uneval_promise_env_, 1},
-    {"_uneval_is_waiver_", (DL_FUNC) &_uneval_is_waiver_, 1},
     {NULL, NULL, 0}
 };
 

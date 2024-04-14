@@ -22,7 +22,7 @@ Partially applies the provided arguments to the function \code{.f}. Acts like
 \code{\link[=autopartial]{autopartial()}}, except that the next invocation will evaluate the function
 rather than waiting for all required arguments to be supplied.
 
-Arguments may also be passed the special value \code{\link[=waiver]{waiver()}}. If \code{\link[=waiver]{waiver()}} is
+Arguments may also be passed the special value \code{\link[=DEFAULT]{DEFAULT()}}. If \code{\link[=DEFAULT]{DEFAULT()}} is
 passed to an argument, its default value is used instead.
 
 Great pains are taken to ensure that the resulting function acts as much as

@@ -8,7 +8,7 @@ new_autopartial(
   f,
   args = arglist(),
   required_arg_names = find_required_arg_names(f),
-  waivable = TRUE,
+  allow_defaults = TRUE,
   f_expr = substitute(f)
 )
 }
@@ -23,7 +23,7 @@ The default, \code{find_required_arg_names(f)}, considers all arguments without 
 default value in the function definition to be required. Pass \code{NULL} or
 \code{character()} to get traditional (non-automatic) partial application.}
 
-\item{waivable}{<\code{\link{logical}}> if \code{TRUE}, if you pass \code{waiver()} to an
+\item{allow_defaults}{<\code{\link{logical}}> if \code{TRUE}, if you pass \code{DEFAULT()} to an
 argument to this function, whatever value that argument already has will be
 used instead.}
 
@@ -40,7 +40,7 @@ of the arguments in \code{required_arg_names} have been supplied.
 Construct a version of the function \code{f} that is partially applied when called
 unless all required arguments have been supplied. This is a low-level
 constructor that should be used only if you need to manually adjust
-\code{required_arg_names}, \code{waivable}, or \code{f_expr}. In most cases, you should use
+\code{required_arg_names}, \code{allow_defaults}, or \code{f_expr}. In most cases, you should use
 the higher-level interfaces \code{\link[=autopartial]{autopartial()}} or \code{\link[=partial]{partial()}}.
 }
 \examples{

@@ -45,9 +45,9 @@ For example, consider the function \code{f}:
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{f = function(x, y, z, a = 4) c(x, y, z, a)
 f = autopartial(f)
 f
-#> <autopartial with waivers>:
+#> <autopartial with DEFAULTs>:
 #> f = function(x, y, z, a = 4) c(x, y, z, a)
-#>   <environment: 0x000002044406f208>
+#>   <environment: 0x00000177ea267178>
 #> f()
 }\if{html}{\out{</div>}}
 
@@ -61,9 +61,9 @@ If all required arguments haven't been supplied yet, the result is a
 partially-applied function:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{f(1)
-#> <autopartial with waivers>:
+#> <autopartial with DEFAULTs>:
 #> f = function(x, y, z, a = 4) c(x, y, z, a)
-#>   <environment: 0x000002044406f208>
+#>   <environment: 0x00000177ea267178>
 #> f(x = 1)
 }\if{html}{\out{</div>}}
 
@@ -87,11 +87,11 @@ equivalent to \code{f(1, 2, 3, a = 7)}.
 Arguments supplied in one partial call can be overridden later in the sequence.
 For example, \code{f(1)(x = 2)(x = 3)} is equivalent to just \code{f(x = 3)}.
 
-Arguments may also be passed the special value \code{\link[=waiver]{waiver()}}. If \code{\link[=waiver]{waiver()}} is
+Arguments may also be passed the special value \code{\link[=DEFAULT]{DEFAULT()}}. If \code{\link[=DEFAULT]{DEFAULT()}} is
 passed to an argument, its default value (or the most recently-partially-applied
-non-\link{waiver} value) is used instead. For example, \code{f(a = waiver())} is
+non-\code{\link{DEFAULT}} value) is used instead. For example, \code{f(a = DEFAULT())} is
 equivalent to \code{f(a = 4)} (since the default value of \code{a} is \code{4} in the
-definition of \code{f}), and \code{f(x = 1)(x = waiver())} is equivalent to \code{f(x = 1)}.
+definition of \code{f}), and \code{f(x = 1)(x = DEFAULT())} is equivalent to \code{f(x = 1)}.
 }
 \section{Implementation details}{
 
@@ -113,9 +113,9 @@ the argument in question---just like normal R functions). Thus, non-standard
 evaluation constructs like \code{\link[=substitute]{substitute()}} should work correctly within the
 underlying function.
 
-\code{\link[=waiver]{waiver()}} values are detected, as much as possible, without evaluating
-arguments: a \code{\link[=waiver]{waiver()}} is valid only if it is stored in a symbol passed to
-an argument or if \code{waiver()} is passed directly to the argument.
+\code{\link[=DEFAULT]{DEFAULT()}} values are detected, as much as possible, without evaluating
+arguments: a \code{\link[=DEFAULT]{DEFAULT()}} is valid only if it is stored in a symbol passed to
+an argument or if \code{DEFAULT()} is passed directly to the argument.
 
 The final function evaluation acts as much as possible like a normal function
 evaluation. The underlying function is called from the same environment that
@@ -146,9 +146,9 @@ g = f(y = 2)(z = 4)
 g
 g(1)
 
-# pass waiver() to optional arguments to use existing values
-f(z = waiver())(1, 2)  # uses default z = 3
-f(z = 4)(z = waiver())(1, 2)  # uses z = 4
+# pass DEFAULT() to optional arguments to use existing values
+f(z = DEFAULT())(1, 2)  # uses default z = 3
+f(z = 4)(z = DEFAULT())(1, 2)  # uses z = 4
 
 }
 \seealso{
