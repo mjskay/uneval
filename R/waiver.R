@@ -2,14 +2,17 @@
 
 #' A default argument
 #'
+#' @description
 #' A flag indicating that the default value of an argument should be used.
 #'
 #' @details
 #' A [waiver()] is a flag passed to an argument of an [autopartial] function
-#' that indicates the arguments should keep its default value (or the most
+#' that indicates the argument should keep its default value (or the most
 #' recently partially-applied value of that argument).
 #'
 #' @seealso [autopartial()]
+#' @family waiver constructors and predicates
+#'
 #' @examples
 #' f = autopartial(function(x, y = "b") {
 #'   c(x = x, y = y)
@@ -31,13 +34,29 @@ waiver = function() {
   structure(list(), class = "waiver")
 }
 
-#' waiver-coalescing operator
-#' @noRd
-`%|W|%` = function(x, y) {
-  if (inherits(x, "waiver")) y
-  else x
-}
 
+# type predicates ---------------------------------------------------------
+
+#' Is `x` a waiver?
+#'
+#' @description
+#' `TRUE` if `x` is a [`waiver`] or a promise to a [`waiver`], `FALSE`
+#' otherwise. Designed to detect waivers in [`arglist`]s without evaluating
+#' arguments in many cases.
+#'
+#' @param x an object.
+#'
+#' @returns scalar [`logical`].
+#'
+#' @family waiver constructors and predicates
+#'
+#' @examples
+#' is_waiver(waiver())
+#' is_waiver(promise(waiver()))
+#' x = waiver()
+#' is_waiver(promise(x))
+#'
+#' @export
 is_waiver = is_waiver_
 
 

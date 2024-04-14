@@ -11,7 +11,7 @@ A flag indicating that the default value of an argument should be used.
 }
 \details{
 A \code{\link[=waiver]{waiver()}} is a flag passed to an argument of an \link{autopartial} function
-that indicates the arguments should keep its default value (or the most
+that indicates the argument should keep its default value (or the most
 recently partially-applied value of that argument).
 }
 \examples{
@@ -33,4 +33,8 @@ g("a", y = waiver())
 }
 \seealso{
 \code{\link[=autopartial]{autopartial()}}
+
+Other waiver constructors and predicates: 
+\code{\link{is_waiver}()}
 }
+\concept{waiver constructors and predicates}

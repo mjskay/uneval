@@ -47,7 +47,7 @@ f = autopartial(f)
 f
 #> <autopartial with waivers>:
 #> f = function(x, y, z, a = 4) c(x, y, z, a)
-#>   <environment: 0x0000022716a90658>
+#>   <environment: 0x000002044406f208>
 #> f()
 }\if{html}{\out{</div>}}
 
@@ -63,7 +63,7 @@ partially-applied function:
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{f(1)
 #> <autopartial with waivers>:
 #> f = function(x, y, z, a = 4) c(x, y, z, a)
-#>   <environment: 0x0000022716a90658>
+#>   <environment: 0x000002044406f208>
 #> f(x = 1)
 }\if{html}{\out{</div>}}
 

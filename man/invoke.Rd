@@ -13,7 +13,7 @@ invoke(
 }
 \arguments{
 \item{expr}{<bare \code{\link{call}}> an expression giving the function and
-arguments to be called. Unlike normal functoin invocation, arguments will
+arguments to be called. Unlike normal function invocation, arguments will
 not be automatically turned into promises, so must be wrapped in \code{\link[=promise]{promise()}}
 if you wish them to be evaluated lazily. Dots can be passed using \code{...}, and
 lists of arguments can be spliced in using \verb{... = <list of arguments>}.}
@@ -59,14 +59,14 @@ f(1 + 2, x = y + z)
 #> f(1 + 2, x = y + z)
 }\if{html}{\out{</div>}}
 
-The standard function invocation \code{f(1, x = y + z)} creates \code{\link{promise}}s for
+The standard function invocation \code{f(1, x = y + z)} creates a \code{\link{promise}} for
 each argument, ensuring they are lazily evaluated by the underlying call.
 Because they are not evaluated, \code{match.call()} shows the unevaluated
 expressions when called.
 
 \code{invoke()} makes the creation of argument \code{\link{promise}}e explicit, requiring
-you to wrap expressions in \code{\link[=promise]{promise()}} if you wish them to be evaluated
-lazily. Thus, the equivalent of the above call with \code{invoke()} is:
+you to wrap an argument's expression in \code{\link[=promise]{promise()}} if you wish it to be
+evaluated lazily. Thus, the equivalent of the above call with \code{invoke()} is:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{invoke(f(promise(1 + 2), x = promise(y + z)))
 #> f(1 + 2, x = y + z)
@@ -80,11 +80,11 @@ arguments at call time by not wrapping them in \code{\link[=promise]{promise()}}
 #> f(3, x = 5)
 }\if{html}{\out{</div>}}
 
-Or, we can pass down argument \code{\link{promise}}s captured via \code{\link{capture}}:
+Or, we can pass down an argument's \code{\link{promise}} captured via \code{\link{capture}}:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{g = function(x, ...) invoke(f(1 + 2, x = capture(x), ...))
-g(x = y + z, i = j)
-#> f(3, x = y + z, i = j)
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{g = function(z, ...) invoke(f(1 + 2, x = capture(z), ...))
+g(z = a + b, i = j)
+#> f(3, x = a + b, i = j)
 }\if{html}{\out{</div>}}
 
 Notice how \code{...} is also forwarded above, allowing the \code{i} argument to be

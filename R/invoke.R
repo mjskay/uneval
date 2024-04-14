@@ -9,7 +9,7 @@
 #' via assignment to `...`.
 #'
 #' @param expr <bare [`call`]> an expression giving the function and
-#' arguments to be called. Unlike normal functoin invocation, arguments will
+#' arguments to be called. Unlike normal function invocation, arguments will
 #' not be automatically turned into promises, so must be wrapped in [promise()]
 #' if you wish them to be evaluated lazily. Dots can be passed using `...`, and
 #' lists of arguments can be spliced in using `... = <list of arguments>`.
@@ -36,14 +36,14 @@
 #' f(1 + 2, x = y + z)
 #' ```
 #'
-#' The standard function invocation `f(1, x = y + z)` creates [`promise`]s for
+#' The standard function invocation `f(1, x = y + z)` creates a [`promise`] for
 #' each argument, ensuring they are lazily evaluated by the underlying call.
 #' Because they are not evaluated, `match.call()` shows the unevaluated
 #' expressions when called.
 #'
 #' `invoke()` makes the creation of argument [`promise`]e explicit, requiring
-#' you to wrap expressions in [promise()] if you wish them to be evaluated
-#' lazily. Thus, the equivalent of the above call with `invoke()` is:
+#' you to wrap an argument's expression in [promise()] if you wish it to be
+#' evaluated lazily. Thus, the equivalent of the above call with `invoke()` is:
 #'
 #' ```{r}
 #' invoke(f(promise(1 + 2), x = promise(y + z)))
@@ -57,11 +57,11 @@
 #' invoke(f(1 + 2, x = y + z))
 #' ```
 #'
-#' Or, we can pass down argument [`promise`]s captured via [`capture`]:
+#' Or, we can pass down an argument's [`promise`] captured via [`capture`]:
 #'
 #' ```{r}
-#' g = function(x, ...) invoke(f(1 + 2, x = capture(x), ...))
-#' g(x = y + z, i = j)
+#' g = function(z, ...) invoke(f(1 + 2, x = capture(z), ...))
+#' g(z = a + b, i = j)
 #' ```
 #'
 #' Notice how `...` is also forwarded above, allowing the `i` argument to be
